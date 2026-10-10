@@ -4,11 +4,12 @@ This checklist is for a prototype only. Passing VM checks does not prove Neway h
 
 ## Source/configuration checks
 
-- [ ] Build configuration uses x86-64 / Debian `amd64`.
-- [ ] Build fails when the OpenPnP version, archive URL, or SHA-256 is missing.
-- [ ] Downloaded OpenPnP archive checksum is verified before extraction.
+- [ ] Build configuration targets x86-64 / Debian `amd64`.
+- [ ] The build hook fetches the pinned OpenPnP source commit `5bd404cfc70f34103a3ca0fbb6b50c2b465f407c` and rejects a commit mismatch.
+- [ ] Maven build completes and the expected OpenPnP JAR plus dependency directory are present.
 - [ ] No credentials, calibration files, or local machine secrets are embedded.
-- [ ] ISO checksum is generated after build.
+- [ ] ISO SHA-256 manifest is generated and validates.
+- [ ] OpenPnP and Debian package licenses/notices are reviewed before redistribution.
 
 ## VM smoke test
 
@@ -19,6 +20,7 @@ This checklist is for a prototype only. Passing VM checks does not prove Neway h
 - [ ] Startup failure is recorded to a readable log.
 - [ ] Application restart behavior is bounded and does not create a rapid crash loop.
 - [ ] Maintenance/recovery instructions work.
+- [ ] Machine configuration persistence behavior is tested; do not assume a live ISO preserves changes after reboot.
 
 ## Hardware test (required before production)
 

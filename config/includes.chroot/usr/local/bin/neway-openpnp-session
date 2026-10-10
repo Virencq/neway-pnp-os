@@ -18,7 +18,9 @@ while :; do
   starts=("${recent[@]}")
   if (( ${#starts[@]} >= 3 )); then
     printf '%s OpenPnP stopped after 3 launches in 10 minutes; recovery required.\n' "$(date --iso-8601=seconds)" | tee -a "${log_file}"
-    command -v xmessage >/dev/null 2>&1 && xmessage -center -buttons "Close:0" "OpenPnP repeatedly failed to start. Check /home/neway/.local/state/neway/openpnp.log and reboot after maintenance." || true
+    if command -v xmessage >/dev/null 2>&1; then
+      xmessage -center -buttons "Close:0" "OpenPnP repeatedly failed to start. Check /home/neway/.local/state/neway/openpnp.log and reboot after maintenance." || true
+    fi
     exec /bin/bash --noprofile --norc
   fi
   starts+=("${now}")

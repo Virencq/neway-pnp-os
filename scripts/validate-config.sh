@@ -20,7 +20,7 @@ for path in "${required_files[@]}"; do
   fi
 done
 
-if grep -RniE 'TODO|REPLACE_ME|CHANGEME' config scripts; then
+if grep -RniE 'TODO|REPLACE_ME|CHANGEME' config; then
   printf 'ERROR: unresolved placeholder found in build configuration.\n' >&2
   exit 1
 fi

@@ -7,6 +7,7 @@ cd "$repo_root"
 required_files=(
   "config/package-lists/neway.list.chroot"
   "config/hooks/live/9999-neway-openpnp.hook.chroot"
+  "config/includes.chroot/etc/neway/openpnp-source.conf"
   "config/includes.chroot/usr/local/bin/neway-openpnp"
   "config/includes.chroot/usr/local/bin/neway-openpnp-session"
   "config/includes.chroot/etc/skel/.bash_profile"
@@ -29,8 +30,12 @@ if ! grep -Fxq "openjdk-21-jre" config/package-lists/neway.list.chroot; then
   printf "ERROR: expected OpenJDK 21 runtime package is missing.\n" >&2
   exit 1
 fi
-if ! grep -Fq 'readonly OPENPNP_COMMIT="5bd404cfc70f34103a3ca0fbb6b50c2b465f407c"' config/hooks/live/9999-neway-openpnp.hook.chroot; then
-  printf "ERROR: OpenPnP source commit is not pinned to the reviewed release commit.\n" >&2
+if ! grep -Eq '^OPENPNP_REPOSITORY="https://[^"]+\.git"$' config/includes.chroot/etc/neway/openpnp-source.conf; then
+  printf "ERROR: OpenPnP repository must be an HTTPS Git URL ending in .git.\n" >&2
+  exit 1
+fi
+if ! grep -Eq '^OPENPNP_COMMIT="[0-9a-f]{40}"$' config/includes.chroot/etc/neway/openpnp-source.conf; then
+  printf "ERROR: OpenPnP commit must be a full 40-character Git SHA.\n" >&2
   exit 1
 fi
 

@@ -1,0 +1,23 @@
+# Runtime-only packages. OpenPnP is built separately in CI and copied into /opt/openpnp.
+# Recommendations are disabled by live-build; explicitly include required runtime tools.
+xserver-xorg-core
+xserver-xorg-video-fbdev
+xserver-xorg-input-libinput
+xinit
+openbox
+dbus-x11
+x11-xserver-utils
+x11-utils
+openjdk-21-jre-headless
+openjdk-21-jre
+udev
+usbutils
+v4l-utils
+libv4l-0t64
+libusb-1.0-0
+libserialport0
+fonts-dejavu-core
+ca-certificates
+user-setup
+sudo
+isc-dhcp-client

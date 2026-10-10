@@ -1,0 +1,23 @@
+# Build outputs and downloaded base images
+/build/
+/dist/
+/out/
+/artifacts/
+/cache/
+/downloads/
+
+# Local machine configuration and credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+private/
+
+# Logs and transient state
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db

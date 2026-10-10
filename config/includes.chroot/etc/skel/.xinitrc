@@ -1,6 +1,3 @@
 #!/bin/sh
-xset s off
-xset -dpms
-xset s noblank
-openbox-session &
-exec /usr/local/bin/neway-openpnp-session
+# Phase 1: boot to a minimal desktop shell. OpenPnP will be installed separately.
+exec openbox-session

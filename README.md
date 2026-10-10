@@ -1,64 +1,75 @@
 # Neway PnP OS
 
-A minimal, reproducible Linux image for Neway pick-and-place machines, designed to boot directly into OpenPnP.
+A minimal, reproducible Linux image for Neway x86-64 pick-and-place machines, designed to boot directly into OpenPnP.
+
+## Target platform
+
+- **CPU:** Intel/AMD x86-64 (Debian `amd64`)
+- **Storage:** SATA SSD or NVMe SSD
+- **User experience:** Power on and launch OpenPnP automatically; no general-purpose desktop shell
+- **Initial image strategy:** Debian minimal base with a small X11 session for OpenPnP's GUI. “No desktop” means no full desktop environment, not no graphical server.
+- **Build system candidate:** Debian Live `live-build` for the first reproducible bootable prototype. Evaluate an installed-to-SSD image path after the first boot test.
 
 ## Project goals
 
 - Run OpenPnP reliably with only its required operating-system and hardware dependencies.
-- Boot into a dedicated machine interface rather than a general-purpose desktop.
 - Preserve machine configuration, calibration, job files, and logs across OS updates.
 - Produce versioned, repeatable images with documented build steps and validation.
-- Keep upstream OpenPnP separate; pin a tested upstream release or commit rather than maintaining an unnecessary fork.
+- Keep upstream OpenPnP separate; pin a tested upstream release/archive and verify its SHA-256 checksum.
+- Keep maintenance/recovery access available without making the normal operator experience a desktop.
 
 ## Status
 
-**Initial planning.** Target CPU architecture and board are not yet specified. Do not select an image builder, kernel configuration, Java version, or graphics stack until the target hardware and OpenPnP release are confirmed.
+**Milestone 1: architecture and build foundation.** The repository documents the target platform and acceptance criteria. A bootable image has not yet been built or hardware-tested.
 
 ## Design principles
 
 1. **Compatibility before size.** Validate USB/serial motion-controller access, camera/OpenCV support, graphics acceleration, and the required Java runtime before removing packages.
-2. **Reproducible builds.** Pin base image, package versions where practical, OpenPnP release/commit, and build-tool versions.
-3. **Safe updates.** Keep machine data separate from the immutable or replaceable OS image. Never overwrite calibration or job data during an OS update.
-4. **Recoverability.** Provide logs, a maintenance mode, and a documented recovery/reflash process.
-5. **Least privilege.** Run OpenPnP as a dedicated non-root user; grant only the device permissions it needs.
-6. **No false minimalism.** Do not remove networking, USB rules, camera libraries, fonts, audio/desktop components, or services until hardware tests prove they are unnecessary.
+2. **Reproducible builds.** Pin the Debian release, OpenPnP archive and SHA-256, and build-tool versions where practical.
+3. **Safe persistence.** Keep machine configuration, calibration, job files, and logs outside replaceable OS files. Never overwrite them during an OS update.
+4. **Recoverability.** Provide logs, a maintenance path, and documented recovery/reflash instructions.
+5. **Least privilege.** Run OpenPnP as a dedicated non-root user; grant only required device permissions.
+6. **No false minimalism.** Do not remove USB rules, camera libraries, fonts, networking, or services until hardware tests prove they are unnecessary.
 
-## Planned repository layout
+## Repository layout
 
-- `image/` — image build configuration and build entry points
-- `packages/openpnp/` — pinned OpenPnP version and packaging/launch integration
-- `system/` — service, kiosk, permissions, recovery, and persistence configuration
-- `scripts/` — build, validation, and image verification scripts
-- `tests/` — automated checks and hardware acceptance test definitions
-- `docs/` — architecture, build instructions, recovery, and release checklist
-
-Directories will be added with the first implementation milestone; this README does not imply those components already exist.
+- `image/` — Debian live-build configuration
+- `packages/openpnp/` — pinned upstream artifact metadata
+- `system/` — kiosk, service, permissions, and persistence configuration
+- `scripts/` — build and validation scripts
+- `tests/` — automated checks and hardware acceptance tests
+- `docs/` — architecture, build instructions, recovery, and release criteria
 
 ## Build strategy
 
-The initial candidate is a minimal Debian-based image with a lightweight graphical session and automatic OpenPnP launch. Evaluate Buildroot or Yocto only after confirming the target architecture and proving that the chosen Java, graphics, camera, and USB stack can run OpenPnP. The final choice must be based on a working hardware prototype, not image size alone.
+Use Debian's official `live-build` tooling to produce the first x86-64 bootable prototype. Install only a minimal X server and the components needed by OpenPnP; launch the application directly from the session without GNOME, KDE, or another full desktop environment. OpenPnP is a GUI application, so a graphical server and compatible graphics libraries are still required.
 
-## Acceptance criteria
+OpenPnP is written in Java and bundles OpenCV binaries for Linux x86/x64 according to its official project documentation. The exact Java runtime must be selected against the pinned OpenPnP release, not guessed from old wiki text. See [OpenPnP Quick Start](https://github.com/openpnp/openpnp/wiki/Quick-Start), [OpenPnP source](https://github.com/openpnp/openpnp), and the [Debian Live Manual](https://live-team.pages.debian.net/live-manual/).
 
-A release is not production-ready until it demonstrates:
+## Milestone 1 — Reproducible boot-to-OpenPnP prototype
 
-- Repeatable image build from a clean environment.
-- Successful boot to OpenPnP without manual login or launching steps.
+**Goal:** produce a bootable x86-64 image that starts OpenPnP automatically in a minimal graphical session.
+
+Acceptance criteria:
+- Build configuration and scripts are committed to GitHub.
+- OpenPnP archive is pinned by version/source URL and verified SHA-256.
+- A clean build produces an ISO and checksum manifest.
+- ISO boots in a VM to OpenPnP without manual login or desktop navigation.
+- Logs are accessible if startup fails.
+- A maintenance/recovery path is documented.
+- VM smoke tests pass before hardware claims are made.
+
+**Not yet in scope:** production-ready SSD installer, automatic updates, machine-specific calibration, and validation of Neway's real motion controller/cameras. Those require a successful prototype and the actual hardware.
+
+## Hardware acceptance before production
+
+- Successful boot to OpenPnP without manual launch steps.
 - Verified motion-controller connectivity and sustained machine operation.
-- Verified camera capture and vision processing for the actual camera hardware.
+- Verified camera capture and vision processing with actual camera hardware.
 - Configuration and calibration survive reboot and OS update.
 - OpenPnP restart and system recovery are tested.
 - Image checksum, version, build inputs, known limitations, and reflash instructions are published.
 
-## Hardware and release decisions still required
-
-- Target computer/board and CPU architecture (x86-64 or ARM64).
-- Storage type and capacity.
-- Exact OpenPnP release or commit.
-- Motion controller connection (USB serial, network, or other).
-- Camera model(s), and whether a touchscreen is required.
-- Whether maintenance access is local, SSH, or both.
-
 ## Licensing
 
-OpenPnP and every bundled dependency retain their own licenses and notices. Before distributing a Neway image, record the exact versions, license texts, source-offer obligations where applicable, and any required attribution. See `LICENSES.md` once added.
+OpenPnP and every bundled dependency retain their own licenses and notices. Before distributing a Neway image, record exact versions, license texts, source-availability obligations, and required attributions in [LICENSES.md](LICENSES.md).

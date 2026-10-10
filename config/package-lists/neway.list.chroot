@@ -14,7 +14,7 @@ xserver-xorg-input-all
 udev
 usbutils
 v4l-utils
-libv4l-0
+libv4l-0t64
 libusb-1.0-0
 libgl1
 libxrender1

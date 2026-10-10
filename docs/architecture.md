@@ -1,55 +1,54 @@
-# Architecture Decision Record: Neway PnP OS v1
+# Neway PnP OS architecture
 
-**Status:** Proposed for Milestone 1  
-**Target:** Intel/AMD x86-64 mini PC or industrial PC, SATA/NVMe SSD  
-**Decision owner:** Neway
+## Goal
 
-## Decision
+Build a single-purpose machine appliance. Power-on should lead to OpenPnP, not a desktop session or shell prompt.
 
-Build the first prototype as a minimal Debian-based x86-64 image using the official Debian Live `live-build` tooling. Run OpenPnP in a dedicated, automatically started graphical session with no full desktop environment.
+## Base-image direction
 
-## Why Debian minimal first
+Use a minimal Debian Trixie root filesystem with a read-only SquashFS system and a controlled writable overlay/data partition. The upstream reference implementation is [carstenandrich/debian-minimal-live](https://github.com/carstenandrich/debian-minimal-live). Reuse its design principles, not its entire default package set or its UEFI-only assumptions without validation.
 
-- OpenPnP is a Java GUI application, so a graphical server is required even if no desktop environment is shown.
-- OpenPnP's official repository documents bundled OpenCV binaries for Linux x86/x64. A pinned, tested upstream archive is preferable to building/forking OpenPnP as part of the OS image.
-- Debian provides maintained kernel, USB/serial, udev, graphics and package infrastructure.
-- `live-build` supports repeatable image configuration and ISO output. The first deliverable is a prototype ISO for VM and spare-PC validation, not yet a production SSD installer.
+The current target is UEFI x86-64. Legacy BIOS support is not a requirement unless Neway hardware testing establishes otherwise.
 
-## Session model
+## Runtime layers
 
-1. Boot Linux normally with systemd.
-2. Start a dedicated unprivileged `neway` operator session.
-3. Start the minimum supported X11 session and launch the pinned OpenPnP archive.
-4. Restart OpenPnP after an application crash, with bounded retries and logs.
-5. Keep a documented maintenance route for diagnostics and image recovery.
+1. Linux kernel, initramfs, systemd, udev and essential base utilities.
+2. Minimal graphics: X server and only the graphics/input drivers needed on the target PC.
+3. OpenPnP's official Linux test .deb, installed by APT to resolve declared runtime dependencies.
+4. OpenPnP launcher managed by systemd or a minimal graphical session, running as unprivileged user neway.
+5. Writable persistent data for OpenPnP settings, calibration, jobs and logs.
 
-Do not use a root-owned OpenPnP process. Do not disable system services merely to reduce the package count until hardware testing confirms they are unnecessary.
+Do not add a display manager, full desktop environment, editor, office suite, browser, media player, Maven, compiler, Git, or other development tools to the target image unless a documented runtime requirement proves otherwise.
 
-## Artifact pinning
+## Dependency policy
 
-The OpenPnP artifact must have all of:
-- Official source/release URL
-- Exact release or snapshot identifier
-- SHA-256 checksum committed to versioned metadata
-- License/source-notice review
+- Inspect the .deb control metadata and dependency declarations for each build.
+- Record OpenPnP package version, package architecture, download URL and SHA-256.
+- Let APT resolve declared dependencies; do not guess Java/native dependencies from old instructions.
+- Check actual runtime shared-library dependencies and startup logs.
+- Test USB/serial controller access and camera capture on real hardware before removing additional libraries or rules.
+- Do not assume that OpenPnP's bundled Java runtime is present until verified in the downloaded package.
 
-The build must fail closed when the artifact version, URL, or checksum is missing or does not match. Never silently build from an unpinned “latest” URL.
+## Read-only and persistence model
 
-## Persistent machine data
+The base operating system should be replaceable without losing machine data. OpenPnP configuration, calibration, job files and logs must be stored in a persistent writable location, not only in a volatile overlay. Document backup and recovery before production deployment.
 
-Machine configuration, calibration, jobs, and logs must live in a documented persistent data directory and be excluded from image replacement/update operations. The first live ISO is a boot prototype; persistence behavior must be explicitly tested and must not be assumed.
+## Security and recovery
 
-## Deferred decisions
+- Run OpenPnP as neway, never as root.
+- Grant serial, USB and camera access narrowly based on actual device requirements.
+- Keep a documented maintenance/recovery path; the normal operator flow remains OpenPnP-only.
+- Do not enable remote login by default unless a support workflow requires it.
 
-- Exact Debian codename and kernel package set after checking current support.
-- Exact OpenPnP release and Java runtime compatibility.
-- X11 session implementation and whether a window manager is needed for the chosen OpenPnP version.
-- Final installed-to-SSD image/installer mechanism.
-- Real hardware-specific camera, USB serial, touchscreen and GPU requirements.
+## Validation gates
 
-## References
+1. Build succeeds reproducibly and records input hashes.
+2. Image boots under UEFI in a VM.
+3. OpenPnP starts without interactive login.
+4. Keyboard, mouse/touch input and application dialogs work.
+5. OpenPnP configuration persists across reboot.
+6. Actual Neway controller connects and remains stable.
+7. Actual cameras capture and vision processing works.
+8. Power-cycle, application restart and recovery are tested.
 
-- [OpenPnP Quick Start](https://github.com/openpnp/openpnp/wiki/Quick-Start)
-- [OpenPnP source repository](https://github.com/openpnp/openpnp)
-- [Debian Live Manual](https://live-team.pages.debian.net/live-manual/)
-- [Debian live-build package](https://packages.debian.org/stable/live-build)
+Passing the image build alone does not imply any later gate has passed.

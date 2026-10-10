@@ -1,0 +1,82 @@
+name: Build Neway OpenPnP ISO (under 400 MB)
+
+on:
+  push:
+    branches:
+      - "feat/under-400mb-openpnp-iso"
+  pull_request:
+    paths:
+      - ".github/workflows/build-iso.yml"
+      - "config/**"
+      - "scripts/**"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neway-openpnp-iso-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate scripts
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends shellcheck
+          bash -n scripts/build-iso.sh scripts/validate-config.sh
+          shellcheck scripts/build-iso.sh scripts/validate-config.sh
+          bash scripts/validate-config.sh
+
+      - name: Build pinned upstream OpenPnP 2.6 runtime
+        run: |
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:/work" \
+            --workdir /tmp \
+            debian:trixie \
+            bash -euxc '
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends ca-certificates git maven openjdk-21-jdk
+              git clone --depth 1 --branch 2.6 https://github.com/openpnp/openpnp.git /tmp/openpnp
+              cd /tmp/openpnp
+              mvn --batch-mode --no-transfer-progress -DskipTests package
+              install -d /work/build-input/openpnp/lib
+              install -m 0644 target/openpnp-gui-*.jar /work/build-input/openpnp/openpnp-gui.jar
+              cp -a target/lib/. /work/build-input/openpnp/lib/
+            '
+
+      - name: Build and enforce ISO size ceiling
+        run: |
+          docker run --rm --privileged \
+            --volume "$GITHUB_WORKSPACE:/work" \
+            --workdir /work \
+            debian:trixie \
+            bash -euxc '
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
+                live-build debootstrap squashfs-tools xorriso \
+                grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates \
+                shellcheck file
+              bash scripts/validate-config.sh
+              bash scripts/build-iso.sh
+              file build-output/neway-pnp-os-amd64.iso
+              (cd build-output && sha256sum --check SHA256SUMS)
+            '
+
+      - name: Upload ISO and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: neway-pnp-os-under-400mb-${{ github.sha }}
+          path: |
+            build-output/neway-pnp-os-amd64.iso
+            build-output/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7

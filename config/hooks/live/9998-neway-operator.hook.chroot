@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+id neway >/dev/null 2>&1 || useradd --create-home --shell /bin/bash neway
+for group in dialout video plugdev input render; do
+    getent group "$group" >/dev/null 2>&1 && usermod -a -G "$group" neway || true
+done
+passwd --lock neway
+install -d -o neway -g neway -m 0750 /home/neway/.local/state/neway
+install -d -o root -g root -m 0755 /opt/openpnp
+if [ -f /usr/share/lightdm/lightdm.conf.d/50-neway-autologin.conf ]; then
+    rm -f /usr/share/lightdm/lightdm.conf.d/50-neway-autologin.conf
+fi
+if [ -f /etc/systemd/system/getty@tty1.service.d/autologin.conf ]; then
+    :
+else
+    install -d /etc/systemd/system/getty@tty1.service.d
+    cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<'EOF'
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin neway --noclear %I $TERM
+EOF
+fi
+chmod 0755 /usr/local/bin/neway-openpnp

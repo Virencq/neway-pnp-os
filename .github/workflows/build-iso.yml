@@ -1,0 +1,61 @@
+name: Build Neway PnP OS ISO
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/build-iso.yml"
+      - ".devcontainer/**"
+      - "config/**"
+      - "scripts/**"
+      - "docs/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iso-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build amd64 Debian live ISO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout Neway PnP OS
+        uses: actions/checkout@v4
+
+      - name: Install Debian live-build tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            live-build debootstrap squashfs-tools xorriso \
+            grub-pc-bin grub-efi-amd64-bin mtools dosfstools \
+            shellcheck file
+
+      - name: Validate repository scripts and configuration
+        run: |
+          bash -n scripts/build-iso.sh
+          bash -n scripts/validate-config.sh
+          shellcheck scripts/build-iso.sh scripts/validate-config.sh
+          ./scripts/validate-config.sh
+
+      - name: Build ISO
+        run: sudo ./scripts/build-iso.sh
+
+      - name: Verify ISO and generate checksums
+        run: |
+          test -s build-output/neway-pnp-os-amd64.iso
+          file build-output/neway-pnp-os-amd64.iso
+          sha256sum build-output/neway-pnp-os-amd64.iso | tee build-output/SHA256SUMS
+
+      - name: Upload ISO and checksum manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: neway-pnp-os-amd64-${{ github.sha }}
+          path: |
+            build-output/neway-pnp-os-amd64.iso
+            build-output/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7

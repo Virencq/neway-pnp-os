@@ -39,10 +39,10 @@ jobs:
           bash -n scripts/build-iso.sh
           bash -n scripts/validate-config.sh
           shellcheck scripts/build-iso.sh scripts/validate-config.sh
-          ./scripts/validate-config.sh
+          bash scripts/validate-config.sh
 
       - name: Build ISO
-        run: sudo ./scripts/build-iso.sh
+        run: sudo bash scripts/build-iso.sh
 
       - name: Verify ISO and generate checksums
         run: |

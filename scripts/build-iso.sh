@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Run as root: live-build uses debootstrap, chroot and mount operations.
+# Run as root inside a Debian Trixie build environment.
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "ERROR: run this script as root (for example: sudo bash scripts/build-iso.sh)." >&2
   exit 1
@@ -23,30 +23,6 @@ mkdir -p "$build_dir/config" "$output_dir"
 rm -f -- "$output_dir/neway-pnp-os-amd64.iso" "$output_dir/SHA256SUMS"
 cp -a "$repo_root/config/." "$build_dir/config/"
 
-if [[ -d "$build_dir/config/hooks/live" ]]; then
-  find "$build_dir/config/hooks/live" -type f -name '*.hook.chroot' -exec chmod 0755 {} +
-fi
-
-# Patch the known live-build Contents index URL bug in the runner's installed
-# helper: Debian stores Contents-amd64.gz under the component path (main/).
-# Fail explicitly if the expected upstream code changes instead of silently
-# building with an unpatched helper.
-helper="/usr/lib/live/build/lb_chroot_linux-image"
-if [[ ! -f "$helper" ]]; then
-  echo "ERROR: expected live-build helper not found: $helper" >&2
-  exit 1
-fi
-if grep -Fq '/dists/${LB_PARENT_DISTRIBUTION}/Contents-${LB_ARCHITECTURES}.gz' "$helper"; then
-  sed -i 's|/dists/${LB_PARENT_DISTRIBUTION}/Contents-${LB_ARCHITECTURES}.gz|/dists/${LB_PARENT_DISTRIBUTION}/main/Contents-${LB_ARCHITECTURES}.gz|g' "$helper"
-fi
-if grep -Fq '/dists/${LB_DISTRIBUTION}/Contents-${LB_ARCHITECTURES}.gz' "$helper"; then
-  sed -i 's|/dists/${LB_DISTRIBUTION}/Contents-${LB_ARCHITECTURES}.gz|/dists/${LB_DISTRIBUTION}/main/Contents-${LB_ARCHITECTURES}.gz|g' "$helper"
-fi
-if grep -Eq '/dists/\$\{LB_(PARENT_)?DISTRIBUTION\}/Contents-\$\{LB_ARCHITECTURES\}\.gz' "$helper"; then
-  echo "ERROR: live-build Contents URL patch did not apply." >&2
-  exit 1
-fi
-
 cd "$build_dir"
 lb config noauto \
   --mode debian \
@@ -55,10 +31,10 @@ lb config noauto \
   --binary-images iso-hybrid \
   --archive-areas "main contrib non-free-firmware" \
   --debian-installer none \
-  --security false \
+  --security true \
   --bootappend-live "boot=live components quiet"
 
-# Trixie's security archive is configured explicitly in config/archives.
+# Use the unmodified Debian Trixie live-build package; do not patch system helpers.
 lb build
 
 iso="$(find "$build_dir" -maxdepth 1 -type f -name '*.iso' -print -quit)"

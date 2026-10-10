@@ -39,8 +39,12 @@ lb config noauto \
   --binary-images iso-hybrid \
   --archive-areas "main contrib non-free-firmware" \
   --debian-installer none \
+  --security false \
   --bootappend-live "boot=live components quiet"
 
+# Debian 13 (Trixie) uses the trixie-security suite. Disable live-build's
+# legacy trixie/updates source and supply the current official suite via
+# config/archives/neway-security.list.chroot instead.
 lb build
 
 iso="$(find "$build_dir" -maxdepth 1 -type f -name '*.iso' -print -quit)"

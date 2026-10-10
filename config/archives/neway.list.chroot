@@ -1,0 +1,4 @@
+# Debian Trixie (13) is the initial prototype target.
+# Keep firmware enabled for broad x86-64 mini-PC compatibility.
+deb http://deb.debian.org/debian trixie main contrib non-free-firmware
+deb http://deb.debian.org/debian-security trixie-security main contrib non-free-firmware

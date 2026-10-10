@@ -1,0 +1,32 @@
+#!/bin/bash
+set -Eeuo pipefail
+umask 077
+state_dir="${HOME}/.local/state/neway"
+log_file="${state_dir}/openpnp.log"
+mkdir -p "${state_dir}"
+touch "${log_file}"
+chmod 0600 "${log_file}"
+
+# Avoid an uncontrolled crash loop: at most 3 launches in a 10-minute window.
+starts=()
+while :; do
+  now="$(date +%s)"
+  recent=()
+  for started in "${starts[@]}"; do
+    if (( now - started < 600 )); then recent+=("${started}"); fi
+  done
+  starts=("${recent[@]}")
+  if (( ${#starts[@]} >= 3 )); then
+    printf '%s OpenPnP stopped after 3 launches in 10 minutes; recovery required.\n' "$(date --iso-8601=seconds)" | tee -a "${log_file}"
+    command -v xmessage >/dev/null 2>&1 && xmessage -center -buttons "Close:0" "OpenPnP repeatedly failed to start. Check /home/neway/.local/state/neway/openpnp.log and reboot after maintenance." || true
+    exec /bin/bash --noprofile --norc
+  fi
+  starts+=("${now}")
+  printf '%s Starting OpenPnP (launch %d in current window).\n' "$(date --iso-8601=seconds)" "${#starts[@]}" | tee -a "${log_file}"
+  set +e
+  /usr/local/bin/neway-openpnp 2>&1 | tee -a "${log_file}"
+  app_status=${PIPESTATUS[0]}
+  set -e
+  printf '%s OpenPnP exited with status %d.\n' "$(date --iso-8601=seconds)" "${app_status}" | tee -a "${log_file}"
+  sleep 3
+done

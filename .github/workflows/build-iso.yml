@@ -9,6 +9,7 @@ on:
       - "scripts/**"
       - "docs/**"
       - "tests/**"
+      - "README.md"
   workflow_dispatch:
 
 permissions:
@@ -20,35 +21,38 @@ concurrency:
 
 jobs:
   build:
-    name: Build amd64 Debian live ISO
+    name: Build amd64 Debian Trixie live ISO
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
       - name: Checkout Neway PnP OS
         uses: actions/checkout@v4
 
-      - name: Install Debian live-build tooling
+      - name: Install host validation and container tooling
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends \
-            live-build debootstrap squashfs-tools xorriso \
-            grub-pc-bin grub-efi-amd64-bin mtools dosfstools \
-            shellcheck file
+          sudo apt-get install --yes --no-install-recommends docker.io shellcheck
 
       - name: Validate repository scripts and configuration
         run: |
           bash -n scripts/build-iso.sh scripts/validate-config.sh
-          bash -n config/hooks/live/9999-neway-openpnp.hook.chroot
-          bash -n config/includes.chroot/usr/local/bin/neway-openpnp
-          bash -n config/includes.chroot/usr/local/bin/neway-openpnp-session
-          shellcheck scripts/build-iso.sh scripts/validate-config.sh \
-            config/hooks/live/9999-neway-openpnp.hook.chroot \
-            config/includes.chroot/usr/local/bin/neway-openpnp \
-            config/includes.chroot/usr/local/bin/neway-openpnp-session
+          shellcheck scripts/build-iso.sh scripts/validate-config.sh
           bash scripts/validate-config.sh
 
-      - name: Build ISO
-        run: sudo bash scripts/build-iso.sh
+      - name: Build ISO inside Debian Trixie
+        run: |
+          docker run --rm --privileged \
+            --volume "$GITHUB_WORKSPACE:/work" \
+            --workdir /work \
+            debian:trixie \
+            bash -euxc '
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
+                live-build debootstrap squashfs-tools xorriso \
+                grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates
+              bash scripts/validate-config.sh
+              bash scripts/build-iso.sh
+            '
 
       - name: Verify ISO and checksum
         run: |

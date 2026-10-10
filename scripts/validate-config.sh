@@ -7,6 +7,7 @@ required=(
   config/package-lists/neway.list.chroot
   config/includes.chroot/etc/skel/.bash_profile
   config/includes.chroot/etc/skel/.xinitrc
+  config/includes.chroot/etc/xdg/openbox/autostart
   config/includes.chroot/usr/local/bin/neway-openpnp
   config/hooks/live/9998-neway-operator.hook.chroot
   scripts/build-iso.sh
@@ -24,5 +25,6 @@ if grep -Eq '^(maven|openjdk-21-jdk|git)$' config/package-lists/neway.list.chroo
   exit 1
 fi
 grep -q 'exec /usr/bin/java' config/includes.chroot/usr/local/bin/neway-openpnp
+grep -q 'neway-openpnp' config/includes.chroot/etc/xdg/openbox/autostart
 grep -q '400' scripts/build-iso.sh
 printf '%s\n' 'Minimal OpenPnP ISO configuration validation passed.'

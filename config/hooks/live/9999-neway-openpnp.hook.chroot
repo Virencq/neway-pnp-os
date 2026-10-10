@@ -1,11 +1,27 @@
 #!/bin/bash
 set -Eeuo pipefail
 
-# OpenPnP 2.6 release commit. Pin by immutable commit, not a moving branch/tag.
-readonly OPENPNP_REPOSITORY="https://github.com/openpnp/openpnp.git"
-readonly OPENPNP_COMMIT="5bd404cfc70f34103a3ca0fbb6b50c2b465f407c"
+readonly SOURCE_CONFIG="/etc/neway/openpnp-source.conf"
 readonly BUILD_ROOT="/tmp/neway-openpnp-build"
 readonly INSTALL_ROOT="/opt/openpnp"
+
+if [[ ! -s "${SOURCE_CONFIG}" ]]; then
+  echo "ERROR: OpenPnP source configuration missing: ${SOURCE_CONFIG}" >&2
+  exit 1
+fi
+# This is a repository-controlled build configuration, not untrusted user input.
+# shellcheck disable=SC1090
+source "${SOURCE_CONFIG}"
+: "${OPENPNP_REPOSITORY:?OPENPNP_REPOSITORY must be set}"
+: "${OPENPNP_COMMIT:?OPENPNP_COMMIT must be set}"
+if [[ ! "${OPENPNP_COMMIT}" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "ERROR: OPENPNP_COMMIT must be a full 40-character Git commit SHA." >&2
+  exit 1
+fi
+if [[ ! "${OPENPNP_REPOSITORY}" =~ ^https://[^[:space:]]+\.git$ ]]; then
+  echo "ERROR: OPENPNP_REPOSITORY must be an HTTPS Git URL ending in .git." >&2
+  exit 1
+fi
 
 command -v git >/dev/null
 command -v mvn >/dev/null
@@ -13,7 +29,7 @@ command -v javac >/dev/null
 install -d -m 0755 /var/log/neway
 exec > >(tee -a /var/log/neway/openpnp-build.log) 2>&1
 
-echo "Building OpenPnP pinned commit ${OPENPNP_COMMIT}"
+echo "Building OpenPnP repository ${OPENPNP_REPOSITORY} at pinned commit ${OPENPNP_COMMIT}"
 rm -rf -- "${BUILD_ROOT}"
 git init "${BUILD_ROOT}"
 git -C "${BUILD_ROOT}" remote add origin "${OPENPNP_REPOSITORY}"
@@ -37,10 +53,10 @@ fi
 install -d -m 0755 "${INSTALL_ROOT}/target"
 install -m 0644 "${APP_JAR}" "${INSTALL_ROOT}/target/"
 cp -a target/lib "${INSTALL_ROOT}/target/lib"
+printf '%s\n' "${OPENPNP_REPOSITORY}" > "${INSTALL_ROOT}/OPENPNP_REPOSITORY"
 printf '%s\n' "${OPENPNP_COMMIT}" > "${INSTALL_ROOT}/OPENPNP_COMMIT"
-chmod 0644 "${INSTALL_ROOT}/OPENPNP_COMMIT"
+chmod 0644 "${INSTALL_ROOT}/OPENPNP_REPOSITORY" "${INSTALL_ROOT}/OPENPNP_COMMIT"
 
-# Run the application as a dedicated unprivileged operator.
 if ! id neway >/dev/null 2>&1; then
   useradd --create-home --shell /bin/bash neway
 fi
@@ -55,7 +71,6 @@ chmod 0755 /usr/local/bin/neway-openpnp /usr/local/bin/neway-openpnp-session
 chmod 0644 /home/neway/.bash_profile
 chmod 0755 /home/neway/.xinitrc
 
-# Start a local autologin console; the operator account has no password login.
 passwd --lock neway
 install -d -m 0755 /etc/systemd/system/getty@tty1.service.d
 cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<'EOF'
@@ -65,7 +80,6 @@ ExecStart=-/sbin/agetty --autologin neway --noclear %I $TERM
 Type=idle
 EOF
 
-# Remove build-only packages while keeping the explicitly requested JRE.
 apt-get purge -y git maven openjdk-21-jdk
 apt-get autoremove -y
 rm -rf "${BUILD_ROOT}" /root/.m2 /var/lib/apt/lists/*

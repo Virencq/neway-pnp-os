@@ -1,0 +1,51 @@
+name: Audit OpenPnP Linux test package
+
+on:
+  push:
+    branches:
+      - feat/minimal-openpnp-appliance
+    paths:
+      - "scripts/inspect-openpnp-test-package.sh"
+      - ".github/workflows/audit-openpnp-package.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openpnp-package-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Inspect official OpenPnP test .deb
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install audit tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends shellcheck dpkg-dev
+
+      - name: Validate script
+        run: |
+          bash -n scripts/inspect-openpnp-test-package.sh
+          shellcheck scripts/inspect-openpnp-test-package.sh
+
+      - name: Download package and inspect dependencies
+        run: |
+          bash scripts/inspect-openpnp-test-package.sh build-output/openpnp-package-audit
+
+      - name: Upload audit report and exact package
+        uses: actions/upload-artifact@v4
+        with:
+          name: openpnp-test-package-audit-${{ github.sha }}
+          path: |
+            build-output/openpnp-package-audit/package-audit.txt
+            build-output/openpnp-package-audit/control-fields.txt
+            build-output/openpnp-package-audit/OpenPnP-linux-test.deb
+          if-no-files-found: error
+          retention-days: 14

@@ -1,34 +1,35 @@
-# Milestone 1 — Prototype validation checklist
+# Minimal OpenPnP appliance — validation checklist
 
-This checklist is for a prototype only. Passing VM checks does not prove Neway hardware compatibility.
+This checklist distinguishes a successful image build from actual runtime and hardware validation.
 
-## Source/configuration checks
+## Package audit
 
-- [ ] Build configuration uses x86-64 / Debian `amd64`.
-- [ ] Build fails when the OpenPnP version, archive URL, or SHA-256 is missing.
-- [ ] Downloaded OpenPnP archive checksum is verified before extraction.
-- [ ] No credentials, calibration files, or local machine secrets are embedded.
-- [ ] ISO checksum is generated after build.
+- [ ] Download the latest official Linux test .deb from the OpenPnP test-download page.
+- [ ] Record download URL, SHA-256, Package, Version, Architecture, Depends and Pre-Depends.
+- [ ] Verify whether the .deb bundles a Java runtime; do not assume it does.
+- [ ] Inspect native shared-library dependencies before finalizing the rootfs package set.
+- [ ] Ensure build-only tools are not installed in the target root filesystem.
 
-## VM smoke test
+## Image/VM smoke test
 
-- [ ] ISO boots using UEFI.
-- [ ] OpenPnP launches automatically without manual login.
-- [ ] No full desktop environment is shown.
-- [ ] OpenPnP window is visible at the configured display resolution.
-- [ ] Startup failure is recorded to a readable log.
-- [ ] Application restart behavior is bounded and does not create a rapid crash loop.
-- [ ] Maintenance/recovery instructions work.
+- [ ] Build the minimal x86-64 UEFI image and record the rootfs and final image sizes.
+- [ ] Boot in a UEFI VM.
+- [ ] OpenPnP starts automatically as the unprivileged neway user.
+- [ ] No desktop environment, editor, browser, office suite, or media player is present.
+- [ ] Keyboard, mouse and application dialogs work.
+- [ ] Startup failure is logged and restart behavior avoids a rapid crash loop.
+- [ ] OpenPnP configuration persists across reboot.
+- [ ] Recovery/maintenance path is documented and tested.
 
-## Hardware test (required before production)
+## Neway hardware validation — required before production
 
-- [ ] Cold boot and repeated reboot on target mini PC.
-- [ ] USB motion controller enumerates reliably after boot and reconnect.
-- [ ] Correct serial permissions work as the non-root operator.
-- [ ] Each production camera opens and streams.
-- [ ] OpenCV vision functions used by Neway work.
-- [ ] GPU/display output, touchscreen and resolution work if fitted.
-- [ ] Configuration and calibration survive reboot and the documented update procedure.
-- [ ] Motion and camera operation remain stable through an extended run.
+- [ ] Cold boot and repeated reboot on target PC.
+- [ ] USB motion controller enumerates reliably, including after reconnect.
+- [ ] Serial device permissions work as the non-root operator.
+- [ ] Each production camera opens and streams through the selected OpenPnP Capture/backend path.
+- [ ] Required OpenCV vision functions work.
+- [ ] GPU/display output, touchscreen and target resolution work if fitted.
+- [ ] Configuration, calibration, job files and logs survive reboot and OS update.
+- [ ] Controller and cameras remain stable through an extended run.
 
-Record machine model, BIOS/UEFI version, CPU, RAM, GPU, storage, controller firmware, camera model, image version, and test logs for every hardware test.
+Record machine model, BIOS/UEFI version, CPU, RAM, GPU, storage, controller firmware, camera model, image version and logs for every hardware test.

@@ -1,16 +1,19 @@
 # Third-party licenses and notices
 
-This repository is intended to assemble an operating-system image containing OpenPnP and supporting system components. Each component keeps its own license; this file is a tracking document, not a replacement for upstream license texts.
+This repository assembles an operating-system image containing Debian packages and upstream OpenPnP. Each component retains its own license; this file tracks obligations but does not replace upstream license texts.
 
-Before publishing a redistributable image, maintain an inventory containing:
+## OpenPnP
 
-- Component and exact version/commit
-- Source URL
-- License identifier and included license text
-- Required copyright/attribution notices
-- Source-code availability or offer obligations, where applicable
-- Modifications made by Neway
+- **Version:** 2.6
+- **Source commit:** `5bd404cfc70f34103a3ca0fbb6b50c2b465f407c`
+- **Source:** https://github.com/openpnp/openpnp
+- **License:** GPL-3.0 (see upstream `LICENSE.txt`)
+- **Build method:** source is fetched by immutable commit and compiled into the image; source is not embedded in the ISO at this stage.
 
-At minimum, review the licenses and redistribution requirements for the selected Linux distribution and kernel, OpenPnP, Java runtime, OpenCV binaries, graphical stack, firmware, and every additional package included in the image.
+Before redistributing an image containing OpenPnP, ensure the corresponding source is made available as required by GPL-3.0, retain required notices, and review the license terms of every bundled dependency.
 
-Do not publish a production image until the inventory and required notices are complete. The final license set depends on the actual package manifest and selected base distribution.
+## Debian and other dependencies
+
+The final package manifest must be captured from the built image and reviewed before any production distribution. Include at least the Debian base/kernel, Java runtime, OpenCV/native libraries, Xorg/Openbox, firmware, and all packages pulled in by dependencies.
+
+For every redistributed component, record exact version, source URL, license identifier/text, copyright notices, modifications, and source-availability obligations. Do not publish a production image until this inventory is complete.

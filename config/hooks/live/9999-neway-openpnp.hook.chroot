@@ -51,6 +51,9 @@ for group in dialout video plugdev input render; do
 done
 install -d -o neway -g neway -m 0750 /home/neway/.local/state/neway
 install -d -o neway -g neway -m 0750 /home/neway/.openpnp
+chmod 0755 /usr/local/bin/neway-openpnp /usr/local/bin/neway-openpnp-session
+chmod 0644 /home/neway/.bash_profile
+chmod 0755 /home/neway/.xinitrc
 
 # Start a local autologin console; the operator account has no password login.
 passwd --lock neway

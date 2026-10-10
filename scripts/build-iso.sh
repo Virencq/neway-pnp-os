@@ -13,11 +13,23 @@ cd "$repo_root"
 build_dir="$repo_root/.build/live-build"
 output_dir="$repo_root/build-output"
 
+# Do not recursively remove a path if it has unexpectedly become a symlink.
+if [[ -L "$build_dir" ]]; then
+  echo "ERROR: refusing to remove symlink build directory: $build_dir" >&2
+  exit 1
+fi
+
 # Recreate the dedicated build tree to prevent stale configuration or output.
 rm -rf -- "$build_dir"
 mkdir -p "$build_dir/config" "$output_dir"
 rm -f -- "$output_dir/neway-pnp-os-amd64.iso" "$output_dir/SHA256SUMS"
 cp -a "$repo_root/config/." "$build_dir/config/"
+
+# GitHub's contents API creates ordinary text files as 0644. live-build hooks
+# must be executable, so set the mode in the isolated build copy explicitly.
+if [[ -d "$build_dir/config/hooks/live" ]]; then
+  find "$build_dir/config/hooks/live" -type f -name '*.hook.chroot' -exec chmod 0755 {} +
+fi
 
 cd "$build_dir"
 lb config noauto \
@@ -38,4 +50,9 @@ if [[ -z "$iso" || ! -s "$iso" ]]; then
 fi
 
 install -m 0644 "$iso" "$output_dir/neway-pnp-os-amd64.iso"
+(
+  cd "$output_dir"
+  sha256sum neway-pnp-os-amd64.iso > SHA256SUMS
+)
 printf 'Built ISO: %s\n' "$output_dir/neway-pnp-os-amd64.iso"
+printf 'Checksum: %s\n' "$output_dir/SHA256SUMS"

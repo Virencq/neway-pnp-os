@@ -23,6 +23,10 @@ mkdir -p "$build_dir/config" "$output_dir"
 rm -f -- "$output_dir/neway-pnp-os-amd64.iso" "$output_dir/SHA256SUMS"
 cp -a "$repo_root/config/." "$build_dir/config/"
 
+if [[ -d "$build_dir/config/hooks/live" ]]; then
+  find "$build_dir/config/hooks/live" -type f -name "*.hook.chroot" -exec chmod 0755 {} +
+fi
+
 cd "$build_dir"
 lb config noauto \
   --mode debian \

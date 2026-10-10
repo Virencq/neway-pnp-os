@@ -1,0 +1,16 @@
+# Minimal graphical base for Neway PnP OS; OpenPnP is installed in a later phase.
+xserver-xorg
+xinit
+openbox
+dbus-x11
+x11-xserver-utils
+x11-utils
+xserver-xorg-video-all
+xserver-xorg-input-all
+udev
+usbutils
+v4l-utils
+libv4l-0t64
+libusb-1.0-0
+fonts-dejavu-core
+ca-certificates

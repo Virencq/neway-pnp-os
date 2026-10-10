@@ -1,0 +1,23 @@
+#!/bin/bash
+set -Eeuo pipefail
+
+# Create the non-root operator account and start the minimal X11 session on tty1.
+if ! id neway >/dev/null 2>&1; then
+  useradd --create-home --shell /bin/bash neway
+fi
+for group in dialout video plugdev input render; do
+  if getent group "$group" >/dev/null 2>&1; then
+    usermod -aG "$group" neway
+  fi
+done
+install -d -o neway -g neway -m 0750 /home/neway/.local/state/neway
+passwd --lock neway
+install -d -m 0755 /etc/systemd/system/getty@tty1.service.d
+cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<'EOF'
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin neway --noclear %I $TERM
+Type=idle
+EOF
+chmod 0644 /home/neway/.bash_profile
+chmod 0755 /home/neway/.xinitrc

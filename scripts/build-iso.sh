@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 # Run as root: live-build uses debootstrap, chroot and mount operations.
 if [[ "$(id -u)" -ne 0 ]]; then
-  echo "ERROR: run this script as root (for example: sudo ./scripts/build-iso.sh)." >&2
+  echo "ERROR: run this script as root (for example: sudo bash scripts/build-iso.sh)." >&2
   exit 1
 fi
 
@@ -12,10 +12,11 @@ cd "$repo_root"
 
 build_dir="$repo_root/.build/live-build"
 output_dir="$repo_root/build-output"
-mkdir -p "$build_dir" "$output_dir"
 
-# Do not silently reuse a stale live-build tree from another configuration.
-rm -rf "$build_dir"/*
+# Recreate the dedicated build tree to prevent stale configuration or output.
+rm -rf -- "$build_dir"
+mkdir -p "$build_dir/config" "$output_dir"
+rm -f -- "$output_dir/neway-pnp-os-amd64.iso" "$output_dir/SHA256SUMS"
 cp -a "$repo_root/config/." "$build_dir/config/"
 
 cd "$build_dir"

@@ -13,22 +13,38 @@ cd "$repo_root"
 build_dir="$repo_root/.build/live-build"
 output_dir="$repo_root/build-output"
 
-# Do not recursively remove a path if it has unexpectedly become a symlink.
 if [[ -L "$build_dir" ]]; then
   echo "ERROR: refusing to remove symlink build directory: $build_dir" >&2
   exit 1
 fi
 
-# Recreate the dedicated build tree to prevent stale configuration or output.
 rm -rf -- "$build_dir"
 mkdir -p "$build_dir/config" "$output_dir"
 rm -f -- "$output_dir/neway-pnp-os-amd64.iso" "$output_dir/SHA256SUMS"
 cp -a "$repo_root/config/." "$build_dir/config/"
 
-# GitHub's contents API creates ordinary text files as 0644. live-build hooks
-# must be executable, so set the mode in the isolated build copy explicitly.
 if [[ -d "$build_dir/config/hooks/live" ]]; then
   find "$build_dir/config/hooks/live" -type f -name '*.hook.chroot' -exec chmod 0755 {} +
+fi
+
+# Patch the known live-build Contents index URL bug in the runner's installed
+# helper: Debian stores Contents-amd64.gz under the component path (main/).
+# Fail explicitly if the expected upstream code changes instead of silently
+# building with an unpatched helper.
+helper="/usr/lib/live/build/lb_chroot_linux-image"
+if [[ ! -f "$helper" ]]; then
+  echo "ERROR: expected live-build helper not found: $helper" >&2
+  exit 1
+fi
+if grep -Fq '/dists/${LB_PARENT_DISTRIBUTION}/Contents-${LB_ARCHITECTURES}.gz' "$helper"; then
+  sed -i 's|/dists/${LB_PARENT_DISTRIBUTION}/Contents-${LB_ARCHITECTURES}.gz|/dists/${LB_PARENT_DISTRIBUTION}/main/Contents-${LB_ARCHITECTURES}.gz|g' "$helper"
+fi
+if grep -Fq '/dists/${LB_DISTRIBUTION}/Contents-${LB_ARCHITECTURES}.gz' "$helper"; then
+  sed -i 's|/dists/${LB_DISTRIBUTION}/Contents-${LB_ARCHITECTURES}.gz|/dists/${LB_DISTRIBUTION}/main/Contents-${LB_ARCHITECTURES}.gz|g' "$helper"
+fi
+if grep -Eq '/dists/\$\{LB_(PARENT_)?DISTRIBUTION\}/Contents-\$\{LB_ARCHITECTURES\}\.gz' "$helper"; then
+  echo "ERROR: live-build Contents URL patch did not apply." >&2
+  exit 1
 fi
 
 cd "$build_dir"
@@ -42,9 +58,7 @@ lb config noauto \
   --security false \
   --bootappend-live "boot=live components quiet"
 
-# Debian 13 (Trixie) uses the trixie-security suite. Disable live-build's
-# legacy trixie/updates source and supply the current official suite via
-# config/archives/neway-security.list.chroot instead.
+# Trixie's security archive is configured explicitly in config/archives.
 lb build
 
 iso="$(find "$build_dir" -maxdepth 1 -type f -name '*.iso' -print -quit)"

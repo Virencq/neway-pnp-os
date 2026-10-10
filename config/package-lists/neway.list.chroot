@@ -1,11 +1,7 @@
-# Minimal X11 runtime plus temporary build prerequisites for pinned OpenPnP source.
+# Minimal graphical base for Neway PnP OS; OpenPnP is installed in a later phase.
 xserver-xorg
 xinit
 openbox
-openjdk-21-jre
-openjdk-21-jdk
-git
-maven
 dbus-x11
 x11-xserver-utils
 x11-utils
@@ -16,20 +12,5 @@ usbutils
 v4l-utils
 libv4l-0t64
 libusb-1.0-0
-libgl1
-libxrender1
-libxtst6
-libxi6
-libxext6
-libxrandr2
-libxinerama1
-libxcursor1
-libfreetype6
-libfontconfig1
 fonts-dejavu-core
-libgtk-3-0t64
-libgstreamer1.0-0
-gstreamer1.0-plugins-base
 ca-certificates
-curl
-unzip

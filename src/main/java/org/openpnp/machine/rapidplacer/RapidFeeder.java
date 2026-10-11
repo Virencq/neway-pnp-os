@@ -7,12 +7,12 @@
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
  * 
- * OpenPnP is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
- * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details.
+ * OpenPnP is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
  * 
- * You should have received a copy of the GNU General Public License along with OpenPnP. If not, see
- * <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with OpenPnP. If not,
+ * see <http://www.gnu.org/licenses/>.
  * 
  * For more information about OpenPnP visit http://openpnp.org
  */
@@ -33,9 +33,14 @@ import org.openpnp.spi.PropertySheetHolder;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
 
+/**
+ * A feeder that is addressed via a QR code style address on a rapid feeder bus. Restored so
+ * configurations referencing org.openpnp.machine.rapidplacer.RapidFeeder continue to load. The
+ * configuration wizard is intentionally omitted in this build.
+ */
 public class RapidFeeder extends ReferenceFeeder {
     static String actuatorName = "RAPIDFEEDER";
-    
+
     @Element(required = false)
     protected Location scanStartLocation = new Location(LengthUnit.Millimeters);
 
@@ -44,10 +49,10 @@ public class RapidFeeder extends ReferenceFeeder {
 
     @Element(required = false)
     protected Length scanIncrement = new Length(4, LengthUnit.Millimeters);
-    
+
     @Attribute(required = false)
     protected String address;
-    
+
     @Attribute(required = false)
     protected int pitch = 4;
 
@@ -67,10 +72,10 @@ public class RapidFeeder extends ReferenceFeeder {
         }
         actuator.actuate(String.format("%s %d", address, pitch));
     }
-    
-	@Override
+
+    @Override
     public Wizard getConfigurationWizard() {
-        return new RapidFeederConfigurationWizard(this);
+        return null;
     }
 
     @Override
@@ -114,7 +119,7 @@ public class RapidFeeder extends ReferenceFeeder {
         this.scanIncrement = scanIncrement;
         firePropertyChange("scanIncrements", null, scanIncrement);
     }
-    
+
     public String getAddress() {
         return address;
     }

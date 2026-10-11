@@ -29,6 +29,7 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -122,7 +123,7 @@ public class MainFrame extends JFrame {
     private static final String PREF_WINDOW_HEIGHT = "MainFrame.windowHeight"; //$NON-NLS-1$
     private static final int PREF_WINDOW_HEIGHT_DEF = 768;
     private static final String PREF_DIVIDER_POSITION = "MainFrame.dividerPosition"; //$NON-NLS-1$
-    private static final int PREF_DIVIDER_POSITION_DEF = -1;
+    private static final int PREF_DIVIDER_POSITION_DEF = 550;
     private static final String PREF_WINDOW_STYLE_MULTIPLE = "MainFrame.windowStyleMultiple"; //$NON-NLS-1$
     private static final boolean PREF_WINDOW_STYLE_MULTIPLE_DEF = false;
 
@@ -302,6 +303,10 @@ public class MainFrame extends JFrame {
 
         // Get handlers for Mac application menu in place.
         boolean macOsXMenus = registerForMacOSXEvents();
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+
+        setUndecorated(true);
+
 
         addWindowListener(new WindowAdapter() {
             @Override
@@ -345,12 +350,14 @@ public class MainFrame extends JFrame {
         partsPanel = new PartsPanel(configuration, this);
         packagesPanel = new PackagesPanel(configuration, this);
         feedersPanel = new FeedersPanel(configuration, this);
+        // Kiosk hidden: constructed so internal callers (IssuesAndSolutionsPanel,
+        // MachineSetupPanel users) don't NPE, but not added as tabs (see below).
         machineSetupPanel = new MachineSetupPanel();
         issuesAndSolutionsPanel = new IssuesAndSolutionsPanel(configuration, this);
         visionSettingsPanel = new VisionSettingsPanel(this);
 
         menuBar = new JMenuBar();
-        setJMenuBar(menuBar);
+        //setJMenuBar(menuBar);
 
         // File
         //////////////////////////////////////////////////////////////////////
@@ -566,6 +573,14 @@ public class MainFrame extends JFrame {
         panelMachine = new JPanel();
         splitPaneMachineAndTabs.setLeftComponent(panelMachine);
         panelMachine.setLayout(new BorderLayout(0, 0));
+        // Kiosk: small explicit left minimum so the divider can drag left past
+        // the jog controls' wide natural minimum. A horizontal JSplitPane
+        // clamps leftward travel at the left component's minimum width, so with
+        // the natural minimum the divider parks at the left stop (right-only
+        // drag). The 550 default + startup guard below keep the start position
+        // at/above this minimum with room to travel both ways; the position
+        // itself still persists in prefs like stock.
+        panelMachine.setMinimumSize(new Dimension(300, 200));
 
         // Add global hotkeys for the arrow keys
         hotkeyActionMap = new HashMap<>();
@@ -716,11 +731,139 @@ public class MainFrame extends JFrame {
                 }
             });
 
+				
+        // Kiosk: STOP + SHUTDOWN overlay the tab-header row (right corner),
+        // same row as Job..Log, above the line separating the tab bar from
+        // the tab content. Always visible on every tab. Font stays stock;
+        // smaller size comes from 12px icons + tight margins + height clamp.
         tabs = new JTabbedPane(JTabbedPane.TOP);
-        splitPaneMachineAndTabs.setRightComponent(tabs);
+        JPanel tabsWrapper = new JPanel(new java.awt.GridBagLayout());
+        java.awt.GridBagConstraints gbcTabs = new java.awt.GridBagConstraints();
+        gbcTabs.gridx = 0;
+        gbcTabs.gridy = 0;
+        gbcTabs.weightx = 1.0;
+        gbcTabs.weighty = 1.0;
+        gbcTabs.fill = java.awt.GridBagConstraints.BOTH;
+        tabsWrapper.add(tabs, gbcTabs);
+        JPanel kioskCorner = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        kioskCorner.setOpaque(false);
+        final JButton btnKioskStop = new JButton(jobPanel.stopKioskJobAction);
+        btnKioskStop.setFocusable(false);
+        btnKioskStop.setIcon(Icons.getIcon("/icons/control-stop.svg", 12, 12)); //$NON-NLS-1$
+        btnKioskStop.setMargin(new Insets(0, 4, 0, 4));
+        kioskCorner.add(btnKioskStop);
+        final JButton btnKioskShutdown = new JButton(jobPanel.shutdownKioskAction);
+        btnKioskShutdown.setFocusable(false);
+        btnKioskShutdown.setIcon(Icons.getIcon("/icons/power_button_off.svg", 12, 12)); //$NON-NLS-1$
+        btnKioskShutdown.setMargin(new Insets(0, 4, 0, 4));
+        kioskCorner.add(btnKioskShutdown);
+        java.awt.GridBagConstraints gbcKiosk = new java.awt.GridBagConstraints();
+        gbcKiosk.gridx = 0;
+        gbcKiosk.gridy = 0;
+        gbcKiosk.weightx = 1.0;
+        gbcKiosk.weighty = 0.0;
+        gbcKiosk.anchor = java.awt.GridBagConstraints.NORTHEAST;
+        gbcKiosk.fill = java.awt.GridBagConstraints.NONE;
+        gbcKiosk.insets = new Insets(1, 0, 0, 2);
+        tabsWrapper.add(kioskCorner, gbcKiosk);
+        // Keep the corner above the tab header, not buried under it.
+        tabsWrapper.setComponentZOrder(kioskCorner, 0);
+        tabsWrapper.setComponentZOrder(tabs, 1);
+        // Clamp button height just inside the real tab-header height (-2px) so
+        // the buttons sit a little smaller, fully inside the tab row above the
+        // content line. Only touches layout when the header height actually
+        // changes (LAF/font/tab changes) - never on divider drags, so the
+        // split pane keeps stock two-way travel. Font stays stock.
+        final int[] lastKioskH = new int[] {-1};
+        final Runnable syncKioskHeights = () -> {
+            try {
+                if (tabs.getTabCount() > 0
+                        && tabs.getUI() instanceof javax.swing.plaf.TabbedPaneUI) {
+                    java.awt.Rectangle r = ((javax.swing.plaf.TabbedPaneUI) tabs.getUI())
+                            .getTabBounds(tabs, 0);
+                    if (r != null && r.height > 0) {
+                        int h = Math.max(r.height - 2, 12);
+                        if (h != lastKioskH[0]) {
+                            lastKioskH[0] = h;
+                            for (JButton b : new JButton[] {btnKioskStop, btnKioskShutdown}) {
+                                java.awt.Dimension p = b.getPreferredSize();
+                                if (p.height != h) {
+                                    b.setPreferredSize(new Dimension(p.width, h));
+                                }
+                            }
+                            kioskCorner.revalidate();
+                            kioskCorner.repaint();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) {
+                // Best effort only; buttons still work at tight-margin size.
+            }
+        };
+        tabs.addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0
+                    && tabs.isShowing()) {
+                SwingUtilities.invokeLater(syncKioskHeights);
+            }
+        });
+        splitPaneMachineAndTabs.setRightComponent(tabsWrapper);
+        // Kiosk: give the right (tabs) side a small explicit minimum too, so
+        // the divider's max travel is wide like stock (JTabbedPane + table
+        // panels otherwise report a huge natural minimum that pins the range).
+        tabs.setMinimumSize(new Dimension(200, 200));
+        tabsWrapper.setMinimumSize(new Dimension(200, 200));
 
-        splitPaneMachineAndTabs
-                .setDividerLocation(prefs.getInt(PREF_DIVIDER_POSITION, PREF_DIVIDER_POSITION_DEF));
+        // Start with room to drag BOTH ways: a stale saved position at/below
+        // the left minimum parks the divider at the left stop (right-only
+        // travel, as in the bug report), so fall back to the default instead.
+        int savedDivider = prefs.getInt(PREF_DIVIDER_POSITION, PREF_DIVIDER_POSITION_DEF);
+        if (savedDivider <= panelMachine.getMinimumSize().width) {
+            savedDivider = PREF_DIVIDER_POSITION_DEF;
+        }
+        splitPaneMachineAndTabs.setDividerLocation(savedDivider);
+        // setDividerLocation before first layout is lost/clamped while the split
+        // pane still has zero width - re-apply once realized so the divider
+        // actually starts with travel each way. One-shot only: after the first
+        // good placement it never touches the divider again, so user drags keep
+        // persisting in prefs like stock. (The listener is on the split pane
+        // itself, whose size does NOT change on divider drags, so this cannot
+        // fight dragging.)
+        final int initialDivider = savedDivider;
+        final boolean[] dividerInitDone = new boolean[] {false};
+        final Runnable applyInitialDivider = () -> {
+            if (dividerInitDone[0]) {
+                return;
+            }
+            int w = splitPaneMachineAndTabs.getWidth();
+            if (w <= 0) {
+                return;
+            }
+            int leftMin = panelMachine.getMinimumSize().width;
+            int rightMin = tabsWrapper.getMinimumSize().width;
+            int maxLoc = w - splitPaneMachineAndTabs.getDividerSize() - rightMin;
+            if (maxLoc < leftMin) {
+                return; // window still packing; wait for a later layout.
+            }
+            if (splitPaneMachineAndTabs.getDividerLocation() <= leftMin) {
+                int loc = Math.max(leftMin, Math.min(initialDivider, maxLoc));
+                splitPaneMachineAndTabs.setDividerLocation(loc);
+            }
+            dividerInitDone[0] = true;
+        };
+        SwingUtilities.invokeLater(applyInitialDivider);
+        splitPaneMachineAndTabs.addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0
+                    && splitPaneMachineAndTabs.isShowing()) {
+                SwingUtilities.invokeLater(applyInitialDivider);
+            }
+        });
+        splitPaneMachineAndTabs.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                SwingUtilities.invokeLater(applyInitialDivider);
+            }
+        });
         splitPaneMachineAndTabs.addPropertyChangeListener("dividerLocation", //$NON-NLS-1$
                 new PropertyChangeListener() {
                     @Override
@@ -744,10 +887,12 @@ public class MainFrame extends JFrame {
                 null, visionSettingsPanel, null);
         tabs.addTab(Translations.getString("MainFrame.RightComponent.tabs.Feeders"), //$NON-NLS-1$
                 null, feedersPanel, null); //$NON-NLS-1$
-        tabs.addTab(Translations.getString("MainFrame.RightComponent.tabs.MachineSetup"), //$NON-NLS-1$
-                null, machineSetupPanel, null);
-        tabs.addTab(Translations.getString("MainFrame.RightComponent.tabs.IssuesAndSolutions"), //$NON-NLS-1$
-                null, issuesAndSolutionsPanel, null);
+        // Kiosk: Machine Setup + Issues tabs hidden to free tab-row space.
+        // (Construction above is commented out; panels stay null.)
+        //tabs.addTab(Translations.getString("MainFrame.RightComponent.tabs.MachineSetup"), //$NON-NLS-1$
+        //        null, machineSetupPanel, null);
+        //tabs.addTab(Translations.getString("MainFrame.RightComponent.tabs.IssuesAndSolutions"), //$NON-NLS-1$
+        //        null, issuesAndSolutionsPanel, null);
 
         LogPanel logPanel = new LogPanel();
         tabs.addTab(Translations.getString("MainFrame.RightComponent.tabs.Log"),
@@ -1100,6 +1245,24 @@ public class MainFrame extends JFrame {
     }
 
     public boolean quit() {
+        if (!saveAndCloseMachine()) {
+            return false;
+        }
+        Logger.info("Shutdown complete, exiting."); //$NON-NLS-1$
+        System.exit(0);
+        return true;
+    }
+
+    /**
+     * Runs everything {@link #quit()} does except exiting the JVM: flushes
+     * preferences, saves the configuration, lets the user review unsaved job
+     * modifications and then disables and closes the machine.
+     *
+     * @return true when the shutdown sequence completed and it is safe to
+     *         exit; false when the user cancelled a prompt, in which case the
+     *         caller must neither exit nor power off the system.
+     */
+    public boolean saveAndCloseMachine() {
         Logger.info("Shutting down..."); //$NON-NLS-1$
         try {
             Preferences.userRoot().flush();
@@ -1141,8 +1304,6 @@ public class MainFrame extends JFrame {
         catch (Exception e) {
             e.printStackTrace();
         }
-        Logger.info("Shutdown complete, exiting."); //$NON-NLS-1$
-        System.exit(0);
         return true;
     }
 

@@ -1,115 +1,108 @@
+/*
+ * Copyright (C) 2011 Jason von Nieda <jason@vonnieda.org>
+ * 
+ * This file is part of OpenPnP.
+ * 
+ * OpenPnP is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * OpenPnP is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with OpenPnP. If not,
+ * see <http://www.gnu.org/licenses/>.
+ * 
+ * For more information about OpenPnP visit http://openpnp.org
+ */
+
 package org.openpnp.machine.neoden4;
+
+import java.awt.Toolkit;
 
 import javax.swing.SwingUtilities;
 
-import org.openpnp.Translations;
 import org.openpnp.gui.support.MessageBoxes;
-import org.openpnp.gui.support.Wizard;
-import org.openpnp.machine.neoden4.wizards.Neoden4SignalerConfigurationWizard;
-import org.openpnp.model.Configuration;
-import org.openpnp.spi.Driver;
 import org.openpnp.spi.base.AbstractJobProcessor;
 import org.openpnp.spi.base.AbstractSignaler;
-import org.pmw.tinylog.Logger;
 import org.simpleframework.xml.Attribute;
 
+/**
+ * Signals job error / completion states with a dialog and a system beep. Restored so
+ * configurations referencing org.openpnp.machine.neoden4.Neoden4Signaler continue to load. The
+ * original hardware buzzer (via NeoDen4Driver) is not available in this build, so the sound is
+ * played with the system beep instead. The configuration wizard is intentionally omitted.
+ */
 public class Neoden4Signaler extends AbstractSignaler implements Runnable {
 
-    @Attribute
+    @Attribute(required = false)
     protected boolean enableErrorSound;
 
-    @Attribute
+    @Attribute(required = false)
     protected boolean enableFinishedSound;
 
-	private boolean playError = false;
-	private boolean playSuccess = false;
-	private boolean lastPlayError = false;
-	private boolean lastPlaySuccess = false;
-    
-	public Neoden4Signaler() {
-		Thread thread = new Thread(this);
-		thread.setDaemon(true);
-		thread.start();
-	}
+    private boolean playError = false;
+    private boolean playSuccess = false;
+    private boolean lastPlayError = false;
+    private boolean lastPlaySuccess = false;
 
-	@Override
-	public void run() {
-		// Starting interval between signals
-		int sleepTime = 10000;
-		
-		while (!Thread.interrupted()) {
-			try {	
-				if (playError) {
-					if (lastPlayError != playError) {
-						// If triggered show dialog
-						lastPlayError = playError;
-						sleepTime = 10000;
+    public Neoden4Signaler() {
+        Thread thread = new Thread(this);
+        thread.setDaemon(true);
+        thread.start();
+    }
 
-						SwingUtilities.invokeLater(new Runnable() {
-							public void run() {
-								MessageBoxes.infoBox(Translations.getString("CommonPhrases.clickOkToConfirm"), //$NON-NLS-1$
-										Translations.getString("CommonPhrases.jobError")); //$NON-NLS-1$
-								playError = false;
-								lastPlayError = false;
-							}
-						});
-					}
-					// Decrease interval between signals
-					sleepTime /= 1.2;
-					this.playSound(2, 250);
-					Thread.sleep(sleepTime);
-				} 
-				else if (playSuccess) {
-					if (lastPlaySuccess != playSuccess) {
-						lastPlaySuccess = playSuccess;
-						sleepTime = 10000;
+    @Override
+    public void run() {
+        while (!Thread.interrupted()) {
+            try {
+                if (playError) {
+                    if (lastPlayError != playError) {
+                        lastPlayError = playError;
+                        if (enableErrorSound) {
+                            Toolkit.getDefaultToolkit().beep();
+                        }
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                MessageBoxes.infoBox("Job Error",
+                                        "The job reported an error. Click OK to confirm.");
+                                playError = false;
+                                lastPlayError = false;
+                            }
+                        });
+                    }
+                    Thread.sleep(200);
+                }
+                else if (playSuccess) {
+                    if (lastPlaySuccess != playSuccess) {
+                        lastPlaySuccess = playSuccess;
+                        if (enableFinishedSound) {
+                            Toolkit.getDefaultToolkit().beep();
+                        }
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                MessageBoxes.infoBox("Job Finished",
+                                        "The job finished successfully. Click OK to confirm.");
+                                playSuccess = false;
+                                lastPlaySuccess = false;
+                            }
+                        });
+                    }
+                    Thread.sleep(200);
+                }
+                else {
+                    Thread.sleep(200);
+                }
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-						SwingUtilities.invokeLater(new Runnable() {
-							public void run() {
-								MessageBoxes.infoBox(Translations.getString("CommonPhrases.clickOkToConfirm"), //$NON-NLS-1$
-										Translations.getString("CommonPhrases.jobSuccess")); //$NON-NLS-1$
-								playSuccess = false;
-								lastPlaySuccess = false;
-							}
-						});
-					}
-					sleepTime /= 1.2;
-					this.playSound(3, 30);
-					Thread.sleep(sleepTime);
-				}
-			} 
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-
-		Logger.debug("Signaler " + getName() + " thread " + Thread.currentThread().getId() + " bye-bye.");
-	}
-	
-	private NeoDen4Driver getNeoden4Driver() {
-		NeoDen4Driver driver = null;
-
-		for (Driver d : Configuration.get().getMachine().getDrivers()) {
-			if (d instanceof NeoDen4Driver) {
-				driver = (NeoDen4Driver) d;
-				break;
-			}
-		}
-		return driver;
-	}
-	
-	private void playSound(int times, int delay) throws Exception {
-		NeoDen4Driver neoden4Driver = getNeoden4Driver();
-
-		for (int i = 0; i < times; i++) {
-			neoden4Driver.setBuzzer(true);
-			Thread.sleep(delay);
-			neoden4Driver.setBuzzer(false);
-			Thread.sleep(delay);
-		}
-	}
-
-    @SuppressWarnings("incomplete-switch")
     @Override
     public void signalJobProcessorState(AbstractJobProcessor.State state) {
         switch (state) {
@@ -122,12 +115,11 @@ public class Neoden4Signaler extends AbstractSignaler implements Runnable {
                 playSuccess = true;
                 break;
             }
-        }
-    }
 
-    @Override
-    public Wizard getConfigurationWizard() {
-        return new Neoden4SignalerConfigurationWizard(this);
+            default: {
+                break;
+            }
+        }
     }
 
     public boolean isEnableErrorSound() {

@@ -1160,6 +1160,122 @@ public class JobPanel extends JPanel {
             updateJobActions();
         }
     };
+    /**
+     * Kiosk STOP button (sits in the tab row, right after Log). Fires the
+     * real Job-tab Stop when a job is active; otherwise reports status so
+     * the button never feels dead.
+     */
+    public final Action stopKioskJobAction = new AbstractAction(
+            "STOP", Icons.stop) { //$NON-NLS-1$
+        {
+            putValue(SHORT_DESCRIPTION,
+                    "Stop the running job."); //$NON-NLS-1$
+            setEnabled(true);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (!kioskIsJobActive()) {
+                mainFrame.setStatus("No running job to stop.");
+                return;
+            }
+            mainFrame.setStatus("Stop requested...");
+            stopJobAction.actionPerformed(e);
+        }
+    };
+
+    /**
+     * Kiosk SHUTDOWN button (tab row, after Log): confirms, stops an active
+     * job, saves + disables/closes the machine, requests OS power-off
+     * (Debian kiosk, no-op on Windows) and exits OpenPnP.
+     */
+    public final Action shutdownKioskAction = new AbstractAction(
+            "SHUTDOWN", Icons.powerOff) { //$NON-NLS-1$
+        {
+            putValue(SHORT_DESCRIPTION,
+                    "Stop the machine, save, exit and power off."); //$NON-NLS-1$
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            int result = JOptionPane.showConfirmDialog(mainFrame,
+                    "<html>Shut down the machine?<br/>" //$NON-NLS-1$
+                            + "The job (if running) will be stopped,<br/>" //$NON-NLS-1$
+                            + "the machine disabled and parked,<br/>" //$NON-NLS-1$
+                            + "configuration saved,<br/>" //$NON-NLS-1$
+                            + "and the system powered off.</html>", //$NON-NLS-1$
+                    "Shut Down", //$NON-NLS-1$
+                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (result != JOptionPane.YES_OPTION) {
+                return;
+            }
+            if (kioskIsJobActive()) {
+                stopJobAction.actionPerformed(e);
+                kioskWaitForJobStopped();
+            }
+            // Save + disable/close the machine first. If the operator cancels
+            // a save prompt, stay running: no exit, no power-off.
+            if (!mainFrame.saveAndCloseMachine()) {
+                return;
+            }
+            // Detached OS process - survives System.exit(0) below.
+            requestOsPowerOff();
+            Logger.info("Shutdown complete, exiting."); //$NON-NLS-1$
+            System.exit(0);
+        }
+    };
+
+    private boolean kioskIsJobActive() {
+        return state == State.Running || state == State.Paused
+                || state == State.Pausing || state == State.Stopping;
+    }
+
+    private void kioskWaitForJobStopped() {
+        for (int i = 0; i < 100; i++) {
+            if (!kioskIsJobActive()) {
+                return;
+            }
+            try {
+                Thread.sleep(100);
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+    }
+
+    /**
+     * Best-effort OS power-off for the Debian kiosk. No-op on Windows (dev
+     * machine). Launches a detached shell that waits 2s (so OpenPnP can exit
+     * first) and then tries each power-off command in turn; the shell's &quot;||&quot;
+     * chain only advances when a command actually fails (e.g. access denied),
+     * which the old ProcessBuilder.start() check could not detect. Being a
+     * separate OS process it survives System.exit(0). Requires a NOPASSWD
+     * sudoers entry (or root) on the kiosk; if none works, OpenPnP just exits.
+     */
+    private void requestOsPowerOff() {
+        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ENGLISH); //$NON-NLS-1$ //$NON-NLS-2$
+        if (os.contains("win")) { //$NON-NLS-1$
+            return;
+        }
+        final String script = "sleep 2; " //$NON-NLS-1$
+                + "systemctl poweroff || " //$NON-NLS-1$
+                + "sudo -n systemctl poweroff || " //$NON-NLS-1$
+                + "sudo -n poweroff || " //$NON-NLS-1$
+                + "sudo -n shutdown -h now || " //$NON-NLS-1$
+                + "echo 'kiosk: no power-off command succeeded'"; //$NON-NLS-1$
+        try {
+            new ProcessBuilder("sh", "-c", script) //$NON-NLS-1$ //$NON-NLS-2$
+                    .redirectErrorStream(true)
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .start();
+            Logger.info("OS power-off scheduled: " + script); //$NON-NLS-1$
+        }
+        catch (Exception ex) {
+            Logger.warn("Could not schedule OS power-off: " + ex.getMessage()); //$NON-NLS-1$
+        }
+    }
     
     public final Action resetAllPlacedAction = new AbstractAction() {
         {

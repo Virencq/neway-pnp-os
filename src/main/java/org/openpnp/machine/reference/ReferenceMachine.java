@@ -32,15 +32,7 @@ import org.openpnp.ConfigurationListener;
 import org.openpnp.Translations;
 import org.openpnp.gui.support.PropertySheetWizardAdapter;
 import org.openpnp.gui.support.Wizard;
-import org.openpnp.machine.neoden4.NeoDen4Driver;
-import org.openpnp.machine.neoden4.NeoDen4FeederActuator;
-import org.openpnp.machine.neoden4.Neoden4Camera;
-import org.openpnp.machine.neoden4.Neoden4Feeder;
-import org.openpnp.machine.neoden4.Neoden4Signaler;
-import org.openpnp.machine.neoden4.Neoden4SwitcherCamera;
-import org.openpnp.machine.pandaplacer.BambooFeederAutoVision;
-import org.openpnp.machine.photon.PhotonFeeder;
-import org.openpnp.machine.rapidplacer.RapidFeeder;
+import org.openpnp.machine.nivoplacer.nivo;
 import org.openpnp.machine.reference.ReferenceCameraBatchOperation;
 import org.openpnp.machine.reference.actuator.ThermistorToLinearSensorActuator;
 import org.openpnp.machine.reference.axis.ReferenceCamClockwiseAxis;
@@ -433,25 +425,17 @@ public class ReferenceMachine extends AbstractMachine {
     @Override
     public List<Class<? extends Feeder>> getCompatibleFeederClasses() {
         List<Class<? extends Feeder>> l = new ArrayList<>();
-        l.add(ReferenceStripFeeder.class);
-        l.add(ReferenceTrayFeeder.class);
-        l.add(ReferenceRotatedTrayFeeder.class);
-        l.add(ReferenceDragFeeder.class);
-        l.add(ReferenceLeverFeeder.class);
-        l.add(ReferencePushPullFeeder.class);
-        l.add(ReferenceTubeFeeder.class);
+        // Kiosk build: NIVO is the primary feeder. The official pneumatic-capable
+        // feeders stay available too: ReferenceAutoFeeder / ReferenceSlotAutoFeeder
+        // for solenoid-triggered feeders (electronic/pneumatic trigger via actuator)
+        // and ReferencePushPullFeeder for feeders needing a push/pull stroke with
+        // vision. Other classes already present in machine.xml still load either
+        // way; this list only controls which implementations can be created.
+        l.add(nivo.class);
         l.add(ReferenceAutoFeeder.class);
         l.add(ReferenceSlotAutoFeeder.class);
-        l.add(ReferenceLoosePartFeeder.class);
-        l.add(AdvancedLoosePartFeeder.class);
-        l.add(ReferenceHeapFeeder.class);
-        l.add(BlindsFeeder.class);
-        l.add(SchultzFeeder.class);
-        l.add(SlotSchultzFeeder.class);
-        l.add(RapidFeeder.class);
-        l.add(Neoden4Feeder.class);
-        l.add(PhotonFeeder.class);
-        l.add(BambooFeederAutoVision.class);
+        l.add(ReferencePushPullFeeder.class);
+
         l.addAll(registeredFeederClasses);
         return l;
     }
@@ -461,8 +445,7 @@ public class ReferenceMachine extends AbstractMachine {
         List<Class<? extends Camera>> l = new ArrayList<>();
         l.add(OpenPnpCaptureCamera.class);
         l.add(OpenCvCamera.class);
-        l.add(Neoden4Camera.class);
-        l.add(Neoden4SwitcherCamera.class);
+
         l.add(Webcams.class);
         l.add(OnvifIPCamera.class);
         l.add(ImageCamera.class);
@@ -488,7 +471,7 @@ public class ReferenceMachine extends AbstractMachine {
         l.add(HttpActuator.class);
         l.add(ScriptActuator.class);
         l.add(ThermistorToLinearSensorActuator.class);
-        l.add(NeoDen4FeederActuator.class);
+
         return l;
     }
 
@@ -497,7 +480,7 @@ public class ReferenceMachine extends AbstractMachine {
         List<Class<? extends Signaler>> l = new ArrayList<>();
         l.add(SoundSignaler.class);
         l.add(ActuatorSignaler.class);
-        l.add(Neoden4Signaler.class);
+
         return l;
     }
 
@@ -507,7 +490,7 @@ public class ReferenceMachine extends AbstractMachine {
         l.add(NullDriver.class);
         l.add(GcodeDriver.class);
         l.add(GcodeAsyncDriver.class);
-        l.add(NeoDen4Driver.class);
+
         return l;
     }
 

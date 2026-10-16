@@ -1,0 +1,17 @@
+Neway technician VPN provisioning
+===================================
+
+No WireGuard private key or peer configuration is shipped in this image.
+
+A Neway provisioning process must create /etc/wireguard/wg0.conf with:
+- a unique device key and unique VPN address assigned in the Neway peer registry;
+- only the required Neway VPN peer(s), with a pinned public key and endpoint;
+- narrowly scoped AllowedIPs (do not route all machine/customer traffic through the VPN);
+- PersistentKeepalive only where required by the network/NAT design.
+
+Set owner root:root and mode 0600. Validate with:
+  wg-quick strip /etc/wireguard/wg0.conf >/dev/null
+
+Technician SSH is intentionally gated until the machine serial, TPM device, controller
+attestation verification marker, and WireGuard configuration all pass validation.
+Never commit real wg0.conf files, private keys, pre-shared keys, or customer VPN details.

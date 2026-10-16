@@ -13,13 +13,14 @@ Minimal Debian Trixie amd64 live ISO prototype for Neway pick-and-place machines
 ## Machine identity and remote maintenance
 
 This feature branch adds:
-- NetworkManager DHCP/autoconnect configuration for Ethernet-like USB phone tethering.
+- NetworkManager DHCP/autoconnect for common USB phone tether drivers, with tether routes preferred over ordinary Ethernet routes.
 - TPM 2.0 diagnostic tooling and Neway serial identity checks.
 - WireGuard package/configuration scaffolding for private technician access.
 - SSH key-only policy, a fail-closed provisioning gate, and nftables blocking TCP/22 except through `wg0`.
+- A signed Neway update-approval preflight that checks machine binding, expiry, artifact SHA-256, and a controller safe-state marker.
 - Factory provisioning and security acceptance documentation.
 
-**Not production-ready yet:** TPM attestation enrollment, the STM32 secure-element challenge-response verifier, Neway's device registry and key-revocation service, and the signed approval/update client are not implemented in this branch. Remote SSH remains disabled until required provisioning artifacts are present. No private keys or production credentials are shipped.
+**Not production-ready yet:** TPM attestation enrollment, the STM32 secure-element challenge-response verifier, Neway's device registry and key-revocation service, the controller safe-state service, and the actual signed update installer are not implemented in this branch. Remote SSH remains disabled until required provisioning artifacts are present. No private keys or production credentials are shipped.
 
 ## Important validation status
 
@@ -31,6 +32,7 @@ Before production use, test UEFI/Secure Boot, display, camera capture, USB/seria
 
 - [Debian Live Manual](https://live-team.pages.debian.net/live-manual/html/live-manual.en.html)
 - [Debian Trixie NetworkManager](https://packages.debian.org/trixie/net/network-manager)
+- [Debian Trixie NetworkManager connection profile properties](https://manpages.debian.org/trixie/network-manager/nm-settings-nmcli.5.en.html)
 - [Debian Trixie WireGuard tools](https://packages.debian.org/trixie/net/wireguard-tools)
 - [Debian Trixie TPM tools](https://packages.debian.org/trixie/amd64/tpm2-tools)
 - [Debian Trixie systemd TPM enrollment](https://manpages.debian.org/trixie/systemd-cryptsetup/systemd-cryptenroll.1.en.html)

@@ -1,0 +1,20 @@
+[connection]
+id=Neway wired and USB tethering
+uuid=5c11e67a-b1f5-4d86-8c58-4d3f0a16a821
+type=ethernet
+autoconnect=true
+autoconnect-priority=100
+multi-connect=3
+permissions=
+
+[ethernet]
+
+[ipv4]
+method=auto
+route-metric=600
+may-fail=false
+
+[ipv6]
+method=auto
+route-metric=600
+may-fail=true

@@ -1,5 +1,5 @@
 [connection]
-id=Neway wired and USB tethering
+id=Neway USB tethering
 uuid=5c11e67a-b1f5-4d86-8c58-4d3f0a16a821
 type=ethernet
 autoconnect=true
@@ -11,10 +11,13 @@ permissions=
 
 [ipv4]
 method=auto
-route-metric=600
+route-metric=50
 may-fail=false
 
 [ipv6]
 method=auto
-route-metric=600
+route-metric=50
 may-fail=true
+
+[match]
+driver=rndis_host;cdc_ether;cdc_ncm;ipheth

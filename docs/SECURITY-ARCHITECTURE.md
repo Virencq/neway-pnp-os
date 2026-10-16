@@ -2,10 +2,11 @@
 
 ## Current implementation scope
 
-This branch adds Debian package/configuration scaffolding and fail-closed local checks.
-It does **not** enroll production identities, issue certificates, provision VPN keys,
-implement STM32 secure-element challenge-response, or install updates. Do not describe
-the feature as production-ready until those external services and hardware tests exist.
+This branch adds Debian package/configuration scaffolding, fail-closed local checks, and a
+signed update-approval preflight. It does **not** enroll production identities, issue
+certificates, provision VPN keys, implement STM32 secure-element challenge-response, or
+install updates. Do not describe the feature as production-ready until those external
+services and hardware tests exist.
 
 ## Identity model
 
@@ -59,22 +60,29 @@ not an authentication method.
 Policy: Neway approval plus an explicit safe maintenance window. No automatic OpenPnP,
 OS, or controller firmware installation is enabled by this branch.
 
-Before an updater is implemented, it must:
-1. Verify signed release metadata and artifact digests against a pinned public trust root.
-2. Reject rollback/downgrade unless a separately signed recovery authorization permits it.
-3. Require a Neway approval record tied to the exact machine, release digest, and expiry.
-4. Require the machine controller to report motion stopped, no active job, outputs safe,
-   and a locally enforceable maintenance window. A remote request alone must not create
-   the safe-state signal.
+The `neway-update-guard` preflight requires a Neway-signed approval manifest bound to the
+machine serial, release version, artifact SHA-256, and expiry. It verifies the detached
+signature against `/etc/neway/update-trust.gpg`, checks the artifact digest, and requires
+a root-owned mode-0600 `/run/neway/controller-safe-for-update` marker containing `safe`.
+The trust keyring and safe-state marker must be provisioned by trusted processes. The
+preflight does not itself install anything and is not yet wired to an updater.
+
+Before production update installation, the updater must:
+1. Use TUF or an equivalent reviewed framework for repository metadata, key rotation,
+   expiry, artifact hashes, and rollback protection.
+2. Verify the exact machine-bound approval and digest, and reject unauthorized downgrades.
+3. Re-check controller safe state immediately before activation; the marker must be
+   refreshed by a controller safety service, not created by a remote request.
+4. Require motion stopped, no active job, outputs safe, and a locally enforceable
+   maintenance window.
 5. Stage the update, verify before activation, record actor/version/result, and provide a
    tested recovery path.
 6. Keep the emergency stop and motion safety interlocks independent of the OS, VPN,
    OpenPnP, and update service.
 
-Use TUF or an equivalent reviewed update framework rather than inventing a custom
-signature/rollback protocol. Keep root signing keys offline and outside this repository.
-Debian security updates must also follow Neway's approval and machine-safe policy; do not
-enable generic unattended package upgrades that can restart the machine during production.
+Keep root signing keys offline and outside this repository. Debian security updates must
+also follow Neway's approval and machine-safe policy; do not enable generic unattended
+package upgrades that can restart the machine during production.
 
 ## Tamper resistance
 
@@ -94,8 +102,10 @@ boot the authorized machine; keep a recovery method under Neway control.
 4. Enroll the STM32 secure element and validate challenge-response using a fresh nonce.
 5. Register the device and its revocation state in the Neway registry.
 6. Provision unique WireGuard peer settings and technician SSH public keys.
-7. Verify all checks, then run `neway-enable-remote-maintenance` as root.
-8. Test revocation, offline behavior, boot recovery, tether reconnect, and fail-closed SSH.
+7. Install the Neway update public trust keyring; never install private signing keys.
+8. Verify all checks, then run `neway-enable-remote-maintenance` as root.
+9. Run `neway-update-guard` before any approved update workflow and test every failure path.
+10. Test revocation, offline behavior, boot recovery, tether reconnect, and fail-closed SSH.
 
 ## Official references
 

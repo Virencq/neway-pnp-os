@@ -1,0 +1,72 @@
+name: Build custom OpenPnP Debian package
+
+on:
+  push:
+    branches:
+      - "feat/openpnp-deb-package"
+  pull_request:
+    paths:
+      - "src/**"
+      - "pom.xml"
+      - "build-deb.sh"
+      - ".github/workflows/build-deb.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openpnp-deb-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install build and package tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends maven dpkg-dev shellcheck
+
+      - name: Validate packaging script
+        run: |
+          bash -n build-deb.sh
+          shellcheck build-deb.sh
+
+      - name: Build custom OpenPnP
+        run: |
+          # Normalize Windows line endings so Checkstyle validates the real source.
+          find src -type f -name "*.java" -exec sed -i 's/\r$//' {} +
+          echo "OpenPnP source commit: $(git rev-parse HEAD)"
+          mvn --batch-mode --no-transfer-progress clean package -DskipTests
+
+      - name: Build and inspect Debian package
+        run: |
+          ./build-deb.sh --package-only
+          DEB="$(find dist -maxdepth 1 -type f -name '*.deb' -print -quit)"
+          test -n "$DEB"
+          dpkg-deb --info "$DEB"
+          dpkg-deb --contents "$DEB"
+          mkdir -p /tmp/deb-check
+          dpkg-deb --extract "$DEB" /tmp/deb-check
+          test -x /tmp/deb-check/usr/bin/openpnp
+          test -f /tmp/deb-check/opt/openpnp/openpnp.jar
+          test -d /tmp/deb-check/opt/openpnp/lib
+          (cd dist && sha256sum "$(basename "$DEB")" > SHA256SUMS)
+          cat dist/SHA256SUMS
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: neway-custom-openpnp-deb-${{ github.sha }}
+          path: |
+            dist/*.deb
+            dist/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14

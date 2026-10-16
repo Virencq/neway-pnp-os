@@ -37,8 +37,13 @@ if [ "$MODE" = "--rebuild" ] || { [ "$MODE" != "--package-only" ] && [ ! -f targ
     mvn clean package -DskipTests
 fi
 
-if [ ! -f target/openpnp.jar ] || [ ! -d target/lib ]; then
-    echo "ERROR: target/openpnp.jar or target/lib missing. Run with --rebuild." >&2
+JAR_FILE="$(find target -maxdepth 1 -type f -name 'openpnp-gui-*.jar' ! -name '*sources*' ! -name '*javadoc*' | sort | head -n 1)"
+if [ -z "$JAR_FILE" ] && [ -f target/openpnp.jar ]; then
+    JAR_FILE="target/openpnp.jar"
+fi
+
+if [ -z "$JAR_FILE" ] || [ ! -d target/lib ]; then
+    echo "ERROR: OpenPnP application JAR or target/lib missing. Run with --rebuild." >&2
     exit 1
 fi
 
@@ -54,7 +59,7 @@ mkdir -p "$STAGE$INSTALL_DIR/lib" \
          "$STAGE/DEBIAN"
 
 echo "==> Staging files..."
-cp target/openpnp.jar "$STAGE$INSTALL_DIR/"
+install -m 0644 "$JAR_FILE" "$STAGE$INSTALL_DIR/openpnp.jar"
 cp -r target/lib/. "$STAGE$INSTALL_DIR/lib/"
 
 # Launcher

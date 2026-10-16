@@ -7,6 +7,11 @@ GUARD=/usr/local/sbin/neway-remote-maintenance-guard
 MARKER=/etc/neway/maintenance-enabled
 
 "$GUARD" --preflight
+systemctl enable --now nftables.service
+systemctl is-active --quiet nftables.service || {
+    echo "Firewall did not become active; SSH remains disabled." >&2
+    exit 1
+}
 systemctl enable --now wg-quick@wg0.service
 ip link show wg0 >/dev/null 2>&1 || {
     systemctl stop wg-quick@wg0.service || true

@@ -16,7 +16,9 @@ SERIAL_FILE=/etc/neway/machine-serial
 WG_CONFIG=/etc/wireguard/wg0.conf
 ATTESTATION=/var/lib/neway/identity/controller-attestation.verified
 
-[ -r "$SERIAL_FILE" ] || fail "machine serial is not provisioned"
+[ -f "$SERIAL_FILE" ] && [ -r "$SERIAL_FILE" ] || fail "machine serial is not provisioned"
+[ "$(stat -c '%U:%G' "$SERIAL_FILE")" = root:root ] || fail "machine serial must be owned by root"
+[ "$(stat -c '%a' "$SERIAL_FILE")" = 644 ] || fail "machine serial must have mode 0644"
 SERIAL=$(tr -d '\r\n' < "$SERIAL_FILE")
 case "$SERIAL" in
     NEWAY-PNP-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]) ;;

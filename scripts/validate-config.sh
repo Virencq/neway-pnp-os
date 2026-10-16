@@ -43,6 +43,7 @@ fi
 grep -q 'exec /usr/bin/java' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q 'neway-openpnp' config/includes.chroot/etc/xdg/openbox/autostart
 grep -q 'ConditionPathExists=/etc/neway/maintenance-enabled' config/includes.chroot/etc/systemd/system/ssh.service.d/10-neway-gate.conf
+grep -q 'ExecStartPre=/usr/bin/ssh-keygen -A' config/includes.chroot/etc/systemd/system/ssh.service.d/10-neway-gate.conf
 grep -q 'iifname != "wg0" tcp dport 22 drop' config/includes.chroot/etc/nftables.d/neway-remote-access.nft
 grep -q 'iifname != "wg0" tcp dport 22 drop' docs/firewall-remote-access.nft
 bash -n scripts/build-iso.sh scripts/validate-config.sh

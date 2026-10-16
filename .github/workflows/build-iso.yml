@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "feat/under-400mb-openpnp-iso"
+      - "feat/os-custom-openpnp-integration"
   pull_request:
     paths:
       - ".github/workflows/build-iso.yml"
@@ -36,7 +37,7 @@ jobs:
           shellcheck scripts/build-iso.sh scripts/validate-config.sh
           bash scripts/validate-config.sh
 
-      - name: Build pinned upstream OpenPnP 2.6 runtime
+      - name: Build Neway custom OpenPnP runtime
         run: |
           docker run --rm \
             --volume "$GITHUB_WORKSPACE:/work" \
@@ -45,9 +46,12 @@ jobs:
             bash -euxc '
               apt-get update
               DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends ca-certificates git maven openjdk-21-jdk
-              git clone --depth 1 --branch 2.6 https://github.com/openpnp/openpnp.git /tmp/openpnp
+              git clone --depth 1 --branch feat/openpnp-deb-package https://github.com/Virencq/neway-pnp-os.git /tmp/openpnp
               cd /tmp/openpnp
-              mvn --batch-mode --no-transfer-progress -DskipTests package
+              echo "OpenPnP source commit: $(git rev-parse HEAD)"
+              # Normalize Windows CRLF endings before Checkstyle validation.
+              find src -type f -name "*.java" -exec sed -i "s/\\r$//" {} +
+              mvn --batch-mode --no-transfer-progress clean package -DskipTests
               install -d /work/build-input/openpnp/lib
               install -m 0644 target/openpnp-gui-*.jar /work/build-input/openpnp/openpnp-gui.jar
               cp -a target/lib/. /work/build-input/openpnp/lib/

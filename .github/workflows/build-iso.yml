@@ -1,4 +1,4 @@
-name: Build Neway OpenPnP ISO (under 400 MB)
+name: Build Neway OpenPnP ISO
 
 on:
   push:
@@ -85,7 +85,7 @@ jobs:
       - name: Upload ISO and checksum
         uses: actions/upload-artifact@v4
         with:
-          name: neway-pnp-os-under-400mb-${{ github.sha }}
+          name: neway-pnp-os-amd64-${{ github.sha }}
           path: |
             build-output/neway-pnp-os-amd64.iso
             build-output/SHA256SUMS

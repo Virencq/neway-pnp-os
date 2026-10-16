@@ -102,7 +102,7 @@ Architecture: all
 Installed-Size: $INSTALLED_SIZE
 Depends: $JAVA_DEP
 Maintainer: $MAINTAINER
-Description: OpenPnP SMT Pick and Place software (custom build)
+Description: $DESCRIPTION
  Custom build of OpenPnP from the pnp-xp-custom branch, including
  local modifications. Installs to $INSTALL_DIR and provides the
  'openpnp' command and a desktop menu entry.

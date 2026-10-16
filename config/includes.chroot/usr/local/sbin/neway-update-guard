@@ -14,7 +14,9 @@ SIGNATURE="$UPDATE_DIR/approved-update.txt.asc"
 ARTIFACT="$UPDATE_DIR/release.tar.zst"
 SAFE_MARKER=/run/neway/controller-safe-for-update
 
-[ -r "$SERIAL_FILE" ] || fail "machine serial is not provisioned"
+[ -f "$SERIAL_FILE" ] && [ -r "$SERIAL_FILE" ] || fail "machine serial is not provisioned"
+[ "$(stat -c '%U:%G' "$SERIAL_FILE")" = root:root ] || fail "machine serial must be owned by root"
+[ "$(stat -c '%a' "$SERIAL_FILE")" = 644 ] || fail "machine serial must have mode 0644"
 SERIAL=$(tr -d '\r\n' < "$SERIAL_FILE")
 case "$SERIAL" in
     NEWAY-PNP-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]) ;;
@@ -23,12 +25,21 @@ esac
 
 [ -f "$TRUST_KEYRING" ] || fail "Neway update trust keyring is not installed"
 [ "$(stat -c '%U:%G' "$TRUST_KEYRING")" = root:root ] || fail "update trust keyring must be owned by root"
+case "$(stat -c '%a' "$TRUST_KEYRING")" in
+    600|640|644) ;;
+    *) fail "update trust keyring must not be writable by non-root users" ;;
+esac
 [ -f "$MANIFEST" ] && [ -f "$SIGNATURE" ] || fail "signed Neway approval is missing"
 [ -f "$ARTIFACT" ] || fail "approved update artifact is missing"
 [ -f "$SAFE_MARKER" ] || fail "controller has not asserted a safe maintenance window"
 [ "$(stat -c '%U:%G' "$SAFE_MARKER")" = root:root ] || fail "safe-state marker must be owned by root"
 [ "$(stat -c '%a' "$SAFE_MARKER")" = 600 ] || fail "safe-state marker must have mode 0600"
 [ "$(cat "$SAFE_MARKER")" = safe ] || fail "controller has not asserted safe state"
+
+NOW_EPOCH=$(date -u +%s)
+MARKER_MTIME=$(stat -c '%Y' "$SAFE_MARKER")
+SAFE_AGE=$((NOW_EPOCH - MARKER_MTIME))
+[ "$SAFE_AGE" -ge 0 ] && [ "$SAFE_AGE" -le 30 ] || fail "controller safe-state assertion is stale"
 
 for key in machine_serial release_version artifact_sha256 approved_until_utc; do
     count=$(grep -c "^$key=" "$MANIFEST" || true)
@@ -50,7 +61,6 @@ APPROVED_UNTIL=$(field approved_until_utc)
 printf '%s' "$RELEASE_VERSION" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$' || fail "release version is invalid"
 printf '%s' "$EXPECTED_SHA" | grep -Eq '^[A-Fa-f0-9]{64}$' || fail "artifact SHA-256 is invalid"
 EXPIRY_EPOCH=$(date -u -d "$APPROVED_UNTIL" +%s 2>/dev/null) || fail "approval expiry is invalid"
-NOW_EPOCH=$(date -u +%s)
 [ "$EXPIRY_EPOCH" -gt "$NOW_EPOCH" ] || fail "Neway approval has expired"
 
 ACTUAL_SHA=$(sha256sum "$ARTIFACT" | awk '{print $1}')

@@ -65,8 +65,11 @@ The `neway-update-guard` preflight requires a Neway-signed approval manifest bou
 machine serial, release version, artifact SHA-256, and expiry. It verifies the detached
 signature against `/etc/neway/update-trust.gpg`, checks the artifact digest, and requires
 a root-owned mode-0600 `/run/neway/controller-safe-for-update` marker containing `safe`.
-The trust keyring and safe-state marker must be provisioned by trusted processes. The
-preflight does not itself install anything and is not yet wired to an updater.
+The marker must be refreshed by a trusted controller safety service at least every 30
+seconds and cleared immediately when any safe-state condition becomes false. The guard
+rejects missing, stale, or improperly permissioned markers. The trust keyring and marker
+must be provisioned by trusted processes. The preflight does not itself install anything
+and is not yet wired to an updater.
 
 Before production update installation, the updater must:
 1. Use TUF or an equivalent reviewed framework for repository metadata, key rotation,

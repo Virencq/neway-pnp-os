@@ -1,28 +1,41 @@
 # Neway PnP OS
 
-Minimal Debian Trixie amd64 live ISO for Neway pick-and-place machines. This branch restarts the implementation from `main` with the requirements that **OpenPnP is included and auto-launched** and the final ISO must be **strictly smaller than 400,000,000 bytes**.
+Minimal Debian Trixie amd64 live ISO prototype for Neway pick-and-place machines. OpenPnP is included and auto-launched. ISO size is accepted as-is; no hard size ceiling is enforced.
 
 ## Build design
 
 - Debian Live `live-build`, `--variant=minbase`, APT recommends and indices disabled.
 - Minimal Xorg/Openbox session; no full desktop environment.
-- Upstream OpenPnP 2.6 is built in CI from its release tag. Maven and the JDK are build-only dependencies; only the runtime JAR and its dependency libraries are copied into the image.
+- The CI workflow builds the Neway-customized OpenPnP source and copies the runtime JAR and dependency libraries into the image.
 - An unprivileged `neway` user autologs in on tty1. Openbox launches OpenPnP automatically.
-- CI fails if the ISO is 400,000,000 bytes or larger, then checks SHA-256 before uploading.
+- CI validates shell configuration and the ISO checksum before uploading the artifact.
 
-## Download a build
+## Machine identity and remote maintenance
 
-Open the [GitHub Actions workflow](https://github.com/Virencq/neway-pnp-os/actions/workflows/build-iso.yml) and download the artifact from a successful run. Artifacts expire after seven days.
+This feature branch adds:
+- NetworkManager DHCP/autoconnect configuration for Ethernet-like USB phone tethering.
+- TPM 2.0 diagnostic tooling and Neway serial identity checks.
+- WireGuard package/configuration scaffolding for private technician access.
+- SSH key-only policy, a fail-closed provisioning gate, and nftables blocking TCP/22 except through `wg0`.
+- Factory provisioning and security acceptance documentation.
+
+**Not production-ready yet:** TPM attestation enrollment, the STM32 secure-element challenge-response verifier, Neway's device registry and key-revocation service, and the signed approval/update client are not implemented in this branch. Remote SSH remains disabled until required provisioning artifacts are present. No private keys or production credentials are shipped.
 
 ## Important validation status
 
-A successful build and size check do not prove that the image boots or that camera and motion-controller hardware works. Before production use, test UEFI boot, display, camera capture, USB/serial connection, machine configuration storage and recovery on the actual Neway PC. This is a live ISO; persistence across reboot is not configured.
+A successful build does not prove that the image boots or that camera, USB tethering, TPM, secure element, or motion-controller hardware works. This is a live ISO prototype; machine identity and settings will not persist across reboot unless the OS is installed to persistent storage or a properly configured persistence layer is added.
+
+Before production use, test UEFI/Secure Boot, display, camera capture, USB/serial connection, machine configuration storage, recovery, USB tether reconnect, VPN isolation, SSH restrictions, identity cloning/revocation, and update rejection during an active job on the actual Neway PC.
 
 ## Official references
 
-- [Debian Live Manual — minimal image and package selection](https://live-team.pages.debian.net/live-manual/html/live-manual.en.html)
-- [OpenPnP 2.6 release](https://github.com/openpnp/openpnp/releases/tag/2.6)
+- [Debian Live Manual](https://live-team.pages.debian.net/live-manual/html/live-manual.en.html)
+- [Debian Trixie NetworkManager](https://packages.debian.org/trixie/net/network-manager)
+- [Debian Trixie WireGuard tools](https://packages.debian.org/trixie/net/wireguard-tools)
+- [Debian Trixie TPM tools](https://packages.debian.org/trixie/amd64/tpm2-tools)
+- [Debian Trixie systemd TPM enrollment](https://manpages.debian.org/trixie/systemd-cryptsetup/systemd-cryptenroll.1.en.html)
+- [The Update Framework specification](https://theupdateframework.github.io/specification/v1.0.20/)
+- [WireGuard quick start](https://www.wireguard.com/quickstart/)
 - [OpenPnP developer guide](https://github.com/openpnp/openpnp/wiki/Developers-Guide)
-- [OpenPnP quick start](https://github.com/openpnp/openpnp/wiki/Quick-Start)
 
 OpenPnP is GPL-3.0 licensed; see [LICENSES.md](LICENSES.md) for project licensing notes.

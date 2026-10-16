@@ -12,7 +12,8 @@ install -d -o root -g root -m 0755 \
     /etc/NetworkManager/system-connections \
     /etc/wireguard \
     /etc/nftables.d \
-    /var/lib/neway/identity
+    /var/lib/neway/identity \
+    /var/lib/neway/updates
 
 # The VPN profile is a public configuration template only; no credentials are shipped.
 chown root:root /etc/NetworkManager/system-connections/Neway-wired-and-USB-tethering.nmconnection
@@ -27,6 +28,7 @@ chmod 0644 /etc/wireguard/README.neway
 chmod 0755 /usr/local/sbin/neway-machine-info
 chmod 0755 /usr/local/sbin/neway-remote-maintenance-guard
 chmod 0755 /usr/local/sbin/neway-enable-remote-maintenance
+chmod 0755 /usr/local/sbin/neway-update-guard
 
 # Host SSH keys must be generated on each installed machine, never baked into a shared ISO.
 rm -f /etc/ssh/ssh_host_*_key /etc/ssh/ssh_host_*_key.pub

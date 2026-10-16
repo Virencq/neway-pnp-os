@@ -26,3 +26,4 @@ wireguard-tools
 openssh-server
 tpm2-tools
 gpgv
+nftables

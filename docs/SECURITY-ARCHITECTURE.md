@@ -32,15 +32,16 @@ yet implement that verifier; creating the marker manually is not secure enrollme
 
 ## USB tethering
 
-NetworkManager is installed and an Ethernet DHCP/autoconnect profile is shipped for
-both physical Ethernet and phone tethering interfaces exposed by Linux as Ethernet
-(RNDIS/CDC-ECM). Connect the Android phone by USB and enable USB tethering on the phone.
-The Linux PC is the USB host; Linux USB gadget mode is not needed for this topology.
+NetworkManager is installed. A DHCP/autoconnect profile matches common phone USB Ethernet
+drivers (`rndis_host`, `cdc_ether`, `cdc_ncm`, and `ipheth`) and gives tether routes a
+lower metric than ordinary Ethernet routes. Connect the Android phone by USB and enable
+USB tethering on the phone. The Linux PC is the USB host; Linux USB gadget mode is not
+needed for this topology.
 
-Phone vendors, Android versions, and kernels expose different USB network drivers. Test
-the actual target phones. Keep local Ethernet available for machine operation; do not
-bridge customer LAN traffic into the technician VPN. The USB connection is a transport,
-not an authentication method.
+Phone vendors, Android versions, and kernels expose different USB network drivers. Confirm
+the actual interface driver on each supported phone; add a reviewed driver match if needed.
+Keep local Ethernet available for machine operation; do not bridge customer LAN traffic
+into the technician VPN. The USB connection is a transport, not an authentication method.
 
 ## Technician access
 
@@ -110,7 +111,7 @@ boot the authorized machine; keep a recovery method under Neway control.
 ## Official references
 
 - Debian Trixie NetworkManager package: https://packages.debian.org/trixie/net/network-manager
-- Debian Trixie NetworkManager CLI manual: https://manpages.debian.org/trixie/network-manager/nmcli.1.en.html
+- Debian Trixie NetworkManager connection profile properties: https://manpages.debian.org/trixie/network-manager/nm-settings-nmcli.5.en.html
 - Debian Trixie WireGuard tools: https://packages.debian.org/trixie/net/wireguard-tools
 - Debian Trixie TPM tools: https://packages.debian.org/trixie/amd64/tpm2-tools
 - Debian Trixie systemd TPM enrollment: https://manpages.debian.org/trixie/systemd-cryptsetup/systemd-cryptenroll.1.en.html

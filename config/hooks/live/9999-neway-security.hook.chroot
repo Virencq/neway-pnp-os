@@ -15,7 +15,7 @@ install -d -o root -g root -m 0755 \
     /var/lib/neway/identity \
     /var/lib/neway/updates
 
-# The VPN profile is a public configuration template only; no credentials are shipped.
+# The USB tethering profile contains no credentials.
 chown root:root /etc/NetworkManager/system-connections/Neway-wired-and-USB-tethering.nmconnection
 chmod 0600 /etc/NetworkManager/system-connections/Neway-wired-and-USB-tethering.nmconnection
 
@@ -36,4 +36,5 @@ rm -f /etc/ssh/ssh_host_*_key /etc/ssh/ssh_host_*_key.pub
 # Keep remote access disabled until factory provisioning creates valid identity and VPN files.
 systemctl --root=/ disable ssh.service || true
 systemctl --root=/ disable ssh.socket || true
+systemctl --root=/ enable NetworkManager.service
 systemctl --root=/ enable nftables.service

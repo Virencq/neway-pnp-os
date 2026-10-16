@@ -20,12 +20,37 @@ This checklist is for a persistent installed system, not a shared live ISO.
 9. Only after the secure-element verifier has checked the controller, create
    `/var/lib/neway/identity/controller-attestation.verified` as root:root mode 0600,
    with the exact contents `verified`. This file is a gate contract, not proof by itself.
-10. Run `neway-machine-info`, `neway-remote-maintenance-guard --preflight`, then
+10. Install the Neway update public keyring at `/etc/neway/update-trust.gpg` as root:root.
+    Keep the private approval/signing key offline and outside the device and repository.
+11. Run `neway-machine-info`, `neway-remote-maintenance-guard --preflight`, then
     `neway-enable-remote-maintenance`.
-11. Verify that TCP/22 is unreachable on Ethernet/Wi-Fi/USB-tether interfaces and reachable
+12. Verify that TCP/22 is unreachable on Ethernet/Wi-Fi/USB-tether interfaces and reachable
     only through the authorized WireGuard peer.
-12. Disconnect/reconnect the phone, reboot twice, and confirm serial, VPN identity and
+13. Disconnect/reconnect the phone, reboot twice, and confirm serial, VPN identity and
     revocation state remain correct.
+
+## Update approval preflight
+
+A signed approval manifest is stored at `/var/lib/neway/updates/approved-update.txt`,
+with detached signature `approved-update.txt.asc` and artifact `release.tar.zst`.
+The signed manifest contains exactly one each of:
+
+```text
+machine_serial=NEWAY-PNP-2026-000001
+release_version=2026.10.16.1
+artifact_sha256=<64 hexadecimal characters>
+approved_until_utc=2026-10-17T12:00:00Z
+```
+
+These values are examples, not a valid approval. The manifest must be signed by the Neway
+approval key represented in the installed public keyring. The controller safety service
+must write `/run/neway/controller-safe-for-update` as root:root mode 0600 with contents
+`safe` only while its locally verified safe-maintenance conditions hold. The marker must
+be refreshed and cleared when conditions change.
+
+Run `neway-update-guard` to verify the signed approval, machine binding, expiry, digest,
+and safe-state marker. This is a preflight only: it does not install the artifact, provide
+rollback protection by itself, or replace a TUF-based update client.
 
 ## Acceptance tests
 
@@ -38,13 +63,14 @@ This checklist is for a persistent installed system, not a shared live ISO.
 - Wrong technician keys and revoked VPN peers must fail.
 - USB tethering must obtain DHCP and restore the route after cable/phone disconnect.
 - Loss of VPN must not stop OpenPnP or compromise local motion safety.
-- An update request during an active job must be rejected. A signed but unapproved release
-  must be rejected. A wrong digest, expired approval, or unauthorized downgrade must fail.
+- An update request during an active job must be rejected. A signed approval for another
+  serial, expired approval, wrong artifact digest, missing safe-state marker, invalid
+  signature, or unauthorized downgrade must fail.
 - An interrupted update must recover without enabling motion or bypassing the emergency stop.
 
 ## Current not-yet-implemented gates
 
 The TPM enrollment/attestation client, controller secure-element challenge-response
-verifier, central registry, VPN key issuance/revocation, signed update client, and controller
-safe-state API are external implementation milestones. The current local shell gate does
-not replace those components.
+verifier, central registry, VPN key issuance/revocation, production controller safe-state
+service, and actual signed update installer are external implementation milestones. The
+local shell gates are not substitutes for those components.

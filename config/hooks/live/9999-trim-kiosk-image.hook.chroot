@@ -1,0 +1,19 @@
+#!/bin/sh
+# Trim non-runtime payload from the kiosk image while preserving package copyright/license files.
+set -eu
+
+rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb /var/cache/debconf/*-old
+rm -rf /usr/share/man/* /usr/share/info/* /usr/share/lintian/*
+
+# Keep English locale data and the C/POSIX locales; this is a fixed-purpose English kiosk.
+if [ -d /usr/share/locale ]; then
+    find /usr/share/locale -mindepth 1 -maxdepth 1 \
+        ! -name 'en' ! -name 'en_*' ! -name 'C' ! -name 'POSIX' \
+        -exec rm -rf -- {} +
+fi
+
+# Remove package documentation except copyright/license notices.
+if [ -d /usr/share/doc ]; then
+    find /usr/share/doc -mindepth 2 -type f ! -name copyright ! -name LICENSE ! -name COPYING -delete
+    find /usr/share/doc -mindepth 1 -type d -empty -delete
+fi

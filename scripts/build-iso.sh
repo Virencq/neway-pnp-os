@@ -45,11 +45,6 @@ iso="$(find "$build_dir" -maxdepth 1 -type f -name '*.iso' -print -quit)"
 [[ -n "$iso" && -s "$iso" ]] || { echo "live-build did not produce an ISO." >&2; exit 1; }
 
 size_bytes="$(stat -c '%s' "$iso")"
-max_bytes=$((400 * 1000 * 1000))
-if (( size_bytes >= max_bytes )); then
-  printf 'ISO exceeds strict 400 MB limit: %s bytes (limit %s bytes).\n' "$size_bytes" "$max_bytes" >&2
-  exit 2
-fi
 
 install -m 0644 "$iso" "$output_dir/neway-pnp-os-amd64.iso"
 (

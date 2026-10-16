@@ -1,9 +1,10 @@
-name: Build Neway OpenPnP ISO (under 400 MB)
+name: Build Neway OpenPnP ISO
 
 on:
   push:
     branches:
       - "feat/under-400mb-openpnp-iso"
+      - "feat/os-custom-openpnp-integration"
   pull_request:
     paths:
       - ".github/workflows/build-iso.yml"
@@ -36,7 +37,7 @@ jobs:
           shellcheck scripts/build-iso.sh scripts/validate-config.sh
           bash scripts/validate-config.sh
 
-      - name: Build pinned upstream OpenPnP 2.6 runtime
+      - name: Build Neway custom OpenPnP runtime
         run: |
           docker run --rm \
             --volume "$GITHUB_WORKSPACE:/work" \
@@ -45,12 +46,22 @@ jobs:
             bash -euxc '
               apt-get update
               DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends ca-certificates git maven openjdk-21-jdk
-              git clone --depth 1 --branch 2.6 https://github.com/openpnp/openpnp.git /tmp/openpnp
+              git clone --depth 1 --branch feat/openpnp-deb-package https://github.com/Virencq/neway-pnp-os.git /tmp/openpnp
               cd /tmp/openpnp
-              mvn --batch-mode --no-transfer-progress -DskipTests package
+              echo "OpenPnP source commit: $(git rev-parse HEAD)"
+              # Build and validate the Debian package before assembling the OS image.
+              find src -type f -name "*.java" -exec sed -i "s/\\r$//" {} +
+              apt-get install --yes --no-install-recommends dpkg-dev curl
+              bash -n build-deb.sh
+              bash build-deb.sh --rebuild
+              DEB="$(find dist -maxdepth 1 -type f -name '*.deb' -print -quit)"
+              test -n "$DEB"
+              dpkg-deb --info "$DEB"
+              mkdir -p /tmp/openpnp-deb
+              dpkg-deb --extract "$DEB" /tmp/openpnp-deb
               install -d /work/build-input/openpnp/lib
-              install -m 0644 target/openpnp-gui-*.jar /work/build-input/openpnp/openpnp-gui.jar
-              cp -a target/lib/. /work/build-input/openpnp/lib/
+              install -m 0644 /tmp/openpnp-deb/opt/openpnp/openpnp.jar /work/build-input/openpnp/openpnp-gui.jar
+              cp -a /tmp/openpnp-deb/opt/openpnp/lib/. /work/build-input/openpnp/lib/
             '
 
       - name: Build and enforce ISO size ceiling
@@ -74,7 +85,7 @@ jobs:
       - name: Upload ISO and checksum
         uses: actions/upload-artifact@v4
         with:
-          name: neway-pnp-os-under-400mb-${{ github.sha }}
+          name: neway-pnp-os-amd64-${{ github.sha }}
           path: |
             build-output/neway-pnp-os-amd64.iso
             build-output/SHA256SUMS

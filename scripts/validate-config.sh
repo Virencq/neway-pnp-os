@@ -17,6 +17,7 @@ required=(
   config/includes.chroot/usr/local/sbin/neway-machine-info
   config/includes.chroot/usr/local/sbin/neway-remote-maintenance-guard
   config/includes.chroot/usr/local/sbin/neway-enable-remote-maintenance
+  config/includes.chroot/usr/local/sbin/neway-update-guard
   config/includes.chroot/etc/NetworkManager/conf.d/20-neway-usb-tethering.conf
   config/includes.chroot/etc/NetworkManager/system-connections/Neway-wired-and-USB-tethering.nmconnection
   config/includes.chroot/etc/wireguard/README.neway
@@ -28,6 +29,7 @@ required=(
   scripts/build-iso.sh
   tests/test-machine-info.sh
   tests/test-remote-maintenance-guard.sh
+  tests/test-update-guard.sh
 )
 for path in "${required[@]}"; do
   [[ -s "$path" ]] || { printf 'Missing required file: %s\n' "$path" >&2; exit 1; }
@@ -46,12 +48,15 @@ grep -q 'ConditionPathExists=/etc/neway/maintenance-enabled' config/includes.chr
 grep -q 'ExecStartPre=/usr/bin/ssh-keygen -A' config/includes.chroot/etc/systemd/system/ssh.service.d/10-neway-gate.conf
 grep -q 'iifname != "wg0" tcp dport 22 drop' config/includes.chroot/etc/nftables.d/neway-remote-access.nft
 grep -q 'iifname != "wg0" tcp dport 22 drop' docs/firewall-remote-access.nft
+grep -q 'gpgv --keyring' config/includes.chroot/usr/local/sbin/neway-update-guard
 bash -n scripts/build-iso.sh scripts/validate-config.sh
 bash -n config/hooks/live/9998-neway-operator.hook.chroot config/hooks/live/9999-neway-security.hook.chroot
 bash -n config/includes.chroot/usr/local/sbin/neway-machine-info
 bash -n config/includes.chroot/usr/local/sbin/neway-remote-maintenance-guard
 bash -n config/includes.chroot/usr/local/sbin/neway-enable-remote-maintenance
-bash -n tests/test-machine-info.sh tests/test-remote-maintenance-guard.sh
+bash -n config/includes.chroot/usr/local/sbin/neway-update-guard
+bash -n tests/test-machine-info.sh tests/test-remote-maintenance-guard.sh tests/test-update-guard.sh
 bash tests/test-machine-info.sh
 bash tests/test-remote-maintenance-guard.sh
+bash tests/test-update-guard.sh
 printf '%s\n' 'Neway OpenPnP OS configuration and security scaffolding validation passed.'

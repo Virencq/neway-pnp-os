@@ -109,7 +109,6 @@ Description: $DESCRIPTION
  local modifications. Installs to $INSTALL_DIR and provides the
  'openpnp' command and a desktop menu entry.
  .
-
  Machine configuration and calibration data are stored separately in
  ~/.openpnp2 and are never touched by this package.
 EOF

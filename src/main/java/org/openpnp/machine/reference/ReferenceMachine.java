@@ -429,12 +429,15 @@ public class ReferenceMachine extends AbstractMachine {
         // feeders stay available too: ReferenceAutoFeeder / ReferenceSlotAutoFeeder
         // for solenoid-triggered feeders (electronic/pneumatic trigger via actuator)
         // and ReferencePushPullFeeder for feeders needing a push/pull stroke with
-        // vision. Other classes already present in machine.xml still load either
-        // way; this list only controls which implementations can be created.
+        // vision. ReferenceStripFeeder is the upstream OpenPnP sprocket-hole vision
+        // strip feeder (from the official openpnp/openpnp repo), offered for cut
+        // tape strips. Other classes already present in machine.xml still load
+        // either way; this list only controls which implementations can be created.
         l.add(nivo.class);
         l.add(ReferenceAutoFeeder.class);
         l.add(ReferenceSlotAutoFeeder.class);
         l.add(ReferencePushPullFeeder.class);
+        l.add(ReferenceStripFeeder.class);
 
         l.addAll(registeredFeederClasses);
         return l;

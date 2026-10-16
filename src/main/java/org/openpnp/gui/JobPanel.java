@@ -1175,11 +1175,29 @@ public class JobPanel extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (!kioskIsJobActive()) {
-                mainFrame.setStatus("No running job to stop.");
+            if (state == State.Stopping) {
+                // A stop is already underway: the job loop exits after the
+                // current step and the queued abort task cleans up. Don't
+                // queue a second abort, just tell the operator to wait.
+                mainFrame.setStatus("Stopping... please wait."); //$NON-NLS-1$
                 return;
             }
-            mainFrame.setStatus("Stop requested...");
+            if (!kioskIsJobActive()) {
+                mainFrame.setStatus("No running job to stop."); //$NON-NLS-1$
+                // Kiosk: the status line alone is easy to miss on a small
+                // touchscreen, so confirm the press with a dialog. The button
+                // must never feel dead.
+                JOptionPane.showMessageDialog(mainFrame,
+                        "<html>No job is currently running.<br/>" //$NON-NLS-1$
+                                + "Nothing to stop.</html>", //$NON-NLS-1$
+                        "Stop", JOptionPane.INFORMATION_MESSAGE); //$NON-NLS-1$
+                return;
+            }
+            // The stop is cooperative: the current placement/step is completed
+            // first, then the job processor is cleaned up and the state
+            // returns to Stopped. Make that visible so the operator knows the
+            // request was accepted and why the machine doesn't halt mid-move.
+            mainFrame.setStatus("Stop requested - finishing current step..."); //$NON-NLS-1$
             stopJobAction.actionPerformed(e);
         }
     };

@@ -1,0 +1,56 @@
+name: Build Debian Package
+
+# Builds a .deb of this custom OpenPnP version on every push, and
+# attaches it to a GitHub Release when a tag like deb-v1 is pushed.
+on:
+  push:
+    branches:
+      - pnp-xp-custom
+      - feat/openpnp-deb-package
+    tags:
+      - 'deb-v*'
+  workflow_dispatch:
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+    name: Build .deb
+    permissions:
+      contents: write   # needed to attach the .deb to a Release
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build with Maven
+        run: mvn -q -B clean package -DskipTests
+
+      - name: Package .deb
+        run: |
+          # guard against CRLF line endings from a Windows checkout
+          sed -i 's/\r$//' build-deb.sh
+          chmod +x build-deb.sh
+          ./build-deb.sh --package-only
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openpnp-custom-deb
+          path: dist/*.deb
+          if-no-files-found: error
+
+      # Optional: pushing a tag like `deb-v1` publishes a GitHub Release
+      # with the .deb attached, giving you a permanent download link.
+      - name: Attach .deb to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/deb-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.deb
+          name: OpenPnP custom ${{ github.ref_name }}
+          body: Custom build of OpenPnP (pnp-xp-custom branch) packaged as a Debian package. Install with `sudo apt install ./openpnp-custom_*.deb`

@@ -38,5 +38,8 @@ Pressing Feed on a NIVO feeder sends `{address} {pitch}` to the `nivo`
 actuator, which the GcodeDriver substitutes into the ACTUATE_STRING_COMMAND,
 e.g. `M603 <address> <pitch>`.
 
-Note: other feeder implementations are hidden from the New Feeder chooser.
-Feeders of other classes already saved in machine.xml still load and work.
+Note: most other feeder implementations are hidden from the New Feeder chooser.
+The chooser offers NIVO plus ReferenceAutoFeeder, ReferenceSlotAutoFeeder,
+ReferencePushPullFeeder and ReferenceStripFeeder (sprocket-hole vision strip
+feeder from upstream OpenPnP). Feeders of other classes already saved in
+machine.xml still load and work.

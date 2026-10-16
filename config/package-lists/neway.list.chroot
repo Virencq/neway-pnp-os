@@ -21,3 +21,9 @@ ca-certificates
 user-setup
 sudo
 isc-dhcp-client
+network-manager
+wireguard-tools
+openssh-server
+tpm2-tools
+gpgv
+nftables

@@ -5,11 +5,14 @@ on:
     branches:
       - "feat/under-400mb-openpnp-iso"
       - "feat/os-custom-openpnp-integration"
+      - "feat/machine-identity-remote-maintenance"
   pull_request:
     paths:
       - ".github/workflows/build-iso.yml"
       - "config/**"
       - "scripts/**"
+      - "tests/**"
+      - "docs/**"
       - "README.md"
   workflow_dispatch:
 
@@ -29,12 +32,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Validate scripts
+      - name: Validate scripts and security scaffolding
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends shellcheck
-          bash -n scripts/build-iso.sh scripts/validate-config.sh
-          shellcheck scripts/build-iso.sh scripts/validate-config.sh
+          bash -n scripts/build-iso.sh scripts/validate-config.sh tests/*.sh
+          shellcheck scripts/build-iso.sh scripts/validate-config.sh tests/*.sh
           bash scripts/validate-config.sh
 
       - name: Build Neway custom OpenPnP runtime
@@ -49,12 +52,11 @@ jobs:
               git clone --depth 1 --branch feat/openpnp-deb-package https://github.com/Virencq/neway-pnp-os.git /tmp/openpnp
               cd /tmp/openpnp
               echo "OpenPnP source commit: $(git rev-parse HEAD)"
-              # Build and validate the Debian package before assembling the OS image.
               find src -type f -name "*.java" -exec sed -i "s/\\r$//" {} +
               apt-get install --yes --no-install-recommends dpkg-dev curl
               bash -n build-deb.sh
               bash build-deb.sh --rebuild
-              DEB="$(find dist -maxdepth 1 -type f -name '*.deb' -print -quit)"
+              DEB="$(find dist -maxdepth 1 -type f -name "*.deb" -print -quit)"
               test -n "$DEB"
               dpkg-deb --info "$DEB"
               mkdir -p /tmp/openpnp-deb
@@ -64,7 +66,7 @@ jobs:
               cp -a /tmp/openpnp-deb/opt/openpnp/lib/. /work/build-input/openpnp/lib/
             '
 
-      - name: Build and enforce ISO size ceiling
+      - name: Build ISO
         run: |
           docker run --rm --privileged \
             --volume "$GITHUB_WORKSPACE:/work" \

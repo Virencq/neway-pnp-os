@@ -1,0 +1,40 @@
+#!/bin/sh
+set -eu
+
+getent group neway-maintenance >/dev/null 2>&1 || groupadd --system neway-maintenance
+
+install -d -o root -g root -m 0755 \
+    /etc/neway \
+    /etc/ssh/sshd_config.d \
+    /etc/systemd/system/ssh.service.d \
+    /etc/systemd/system/ssh.socket.d \
+    /etc/NetworkManager/conf.d \
+    /etc/NetworkManager/system-connections \
+    /etc/wireguard \
+    /etc/nftables.d \
+    /var/lib/neway/identity \
+    /var/lib/neway/updates
+
+# The USB tethering profile contains no credentials.
+chown root:root /etc/NetworkManager/system-connections/Neway-wired-and-USB-tethering.nmconnection
+chmod 0600 /etc/NetworkManager/system-connections/Neway-wired-and-USB-tethering.nmconnection
+
+chmod 0644 /etc/ssh/sshd_config.d/60-neway-maintenance.conf
+chmod 0644 /etc/systemd/system/ssh.service.d/10-neway-gate.conf
+chmod 0644 /etc/systemd/system/ssh.socket.d/10-neway-gate.conf
+chmod 0644 /etc/NetworkManager/conf.d/20-neway-usb-tethering.conf
+chmod 0644 /etc/nftables.conf /etc/nftables.d/neway-remote-access.nft
+chmod 0644 /etc/wireguard/README.neway
+chmod 0755 /usr/local/sbin/neway-machine-info
+chmod 0755 /usr/local/sbin/neway-remote-maintenance-guard
+chmod 0755 /usr/local/sbin/neway-enable-remote-maintenance
+chmod 0755 /usr/local/sbin/neway-update-guard
+
+# Host SSH keys must be generated on each installed machine, never baked into a shared ISO.
+rm -f /etc/ssh/ssh_host_*_key /etc/ssh/ssh_host_*_key.pub
+
+# Keep remote access disabled until factory provisioning creates valid identity and VPN files.
+systemctl --root=/ disable ssh.service || true
+systemctl --root=/ disable ssh.socket || true
+systemctl --root=/ enable NetworkManager.service
+systemctl --root=/ enable nftables.service

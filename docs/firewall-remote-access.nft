@@ -1,0 +1,10 @@
+# Neway remote-maintenance firewall rule
+# Included by /etc/nftables.conf in the image.
+# This is deliberately narrow: it blocks TCP/22 except on wg0 and does not
+# change policy for OpenPnP, cameras, USB, or other application traffic.
+table inet neway_remote {
+    chain input {
+        type filter hook input priority -10; policy accept;
+        iifname != "wg0" tcp dport 22 drop
+    }
+}

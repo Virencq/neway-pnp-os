@@ -1,0 +1,45 @@
+#!/bin/sh
+set -eu
+
+MODE=${1:-service}
+if [ "$MODE" != service ] && [ "$MODE" != --preflight ]; then
+    echo "Usage: neway-remote-maintenance-guard [--preflight]" >&2
+    exit 64
+fi
+
+fail() {
+    echo "Neway remote maintenance blocked: $1" >&2
+    exit 1
+}
+
+SERIAL_FILE=/etc/neway/machine-serial
+WG_CONFIG=/etc/wireguard/wg0.conf
+ATTESTATION=/var/lib/neway/identity/controller-attestation.verified
+
+[ -f "$SERIAL_FILE" ] && [ -r "$SERIAL_FILE" ] || fail "machine serial is not provisioned"
+[ "$(stat -c '%U:%G' "$SERIAL_FILE")" = root:root ] || fail "machine serial must be owned by root"
+[ "$(stat -c '%a' "$SERIAL_FILE")" = 644 ] || fail "machine serial must have mode 0644"
+SERIAL=$(tr -d '\r\n' < "$SERIAL_FILE")
+case "$SERIAL" in
+    NEWAY-PNP-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]) ;;
+    *) fail "machine serial format is invalid" ;;
+esac
+
+[ -c /dev/tpmrm0 ] || [ -c /dev/tpm0 ] || fail "TPM device is not available"
+[ -f "$ATTESTATION" ] || fail "controller secure-element attestation has not been verified"
+[ "$(stat -c '%U:%G' "$ATTESTATION")" = root:root ] || fail "controller attestation marker must be owned by root"
+[ "$(stat -c '%a' "$ATTESTATION")" = 600 ] || fail "controller attestation marker must have mode 0600"
+[ "$(cat "$ATTESTATION")" = verified ] || fail "controller attestation marker is not in verified state"
+
+[ -f "$WG_CONFIG" ] || fail "WireGuard peer configuration is missing"
+[ "$(stat -c '%U:%G' "$WG_CONFIG")" = root:root ] || fail "WireGuard configuration must be owned by root"
+[ "$(stat -c '%a' "$WG_CONFIG")" = 600 ] || fail "WireGuard configuration must have mode 0600"
+command -v wg-quick >/dev/null 2>&1 || fail "wg-quick is unavailable"
+wg-quick strip "$WG_CONFIG" >/dev/null 2>&1 || fail "WireGuard configuration failed validation"
+
+if [ "$MODE" = service ]; then
+    [ -f /etc/neway/maintenance-enabled ] || fail "Neway maintenance has not been enabled by provisioning"
+    ip link show wg0 >/dev/null 2>&1 || fail "WireGuard interface wg0 is not up"
+fi
+
+exit 0

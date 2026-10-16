@@ -1,0 +1,56 @@
+#!/bin/sh
+set -eu
+
+SERIAL_FILE=/etc/neway/machine-serial
+MACHINE_ID_FILE=/etc/machine-id
+IDENTITY_DIR=/var/lib/neway/identity
+
+if [ -r "$SERIAL_FILE" ]; then
+    SERIAL=$(tr -d '\r\n' < "$SERIAL_FILE")
+else
+    SERIAL=UNPROVISIONED
+fi
+
+if [ -r "$MACHINE_ID_FILE" ]; then
+    MACHINE_ID=$(tr -d '\r\n' < "$MACHINE_ID_FILE")
+else
+    MACHINE_ID=UNAVAILABLE
+fi
+
+case "$SERIAL" in
+    NEWAY-PNP-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]) SERIAL_VALID=yes ;;
+    *) SERIAL_VALID=no ;;
+esac
+
+if [ -c /dev/tpmrm0 ] || [ -c /dev/tpm0 ]; then
+    TPM_STATUS=present
+else
+    TPM_STATUS=not-detected
+fi
+
+if [ -f "$IDENTITY_DIR/controller-attestation.verified" ]; then
+    CONTROLLER_STATUS=verification-marker-present
+else
+    CONTROLLER_STATUS=not-enrolled
+fi
+
+printf 'Neway PnP OS machine identity\n'
+printf 'Serial: %s\n' "$SERIAL"
+printf 'Serial format valid: %s\n' "$SERIAL_VALID"
+printf 'OS machine-id: %s (not a cryptographic identity)\n' "$MACHINE_ID"
+printf 'TPM device node: %s\n' "$TPM_STATUS"
+printf 'Controller secure-element status: %s\n' "$CONTROLLER_STATUS"
+
+if [ "$SERIAL_VALID" != yes ]; then
+    printf 'Remote maintenance readiness: blocked (machine serial not provisioned)\n'
+    exit 1
+fi
+if [ "$TPM_STATUS" != present ]; then
+    printf 'Remote maintenance readiness: blocked (TPM 2.0 device not detected)\n'
+    exit 1
+fi
+if [ "$CONTROLLER_STATUS" != verification-marker-present ]; then
+    printf 'Remote maintenance readiness: blocked (controller attestation not verified)\n'
+    exit 1
+fi
+printf 'Identity prerequisites: present; cryptographic enrollment and server registration still require provisioning validation.\n'

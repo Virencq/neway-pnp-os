@@ -56,7 +56,7 @@ fi
 grep -q 'exec /usr/bin/java' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q -- '--add-opens=java.base/java.lang=ALL-UNNAMED' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q -- '--add-opens=java.desktop/java.awt=ALL-UNNAMED' config/includes.chroot/usr/local/bin/neway-openpnp
-grep -q 'mkdir -p "\$HOME/.local/share/xorg" "\$HOME/.openpnp2"' config/includes.chroot/etc/skel/.bash_profile
+grep -Fq 'mkdir -p "$HOME/.local/share/xorg" "$HOME/.openpnp2"' config/includes.chroot/etc/skel/.bash_profile
 grep -Fq -- "-cp \"\$JAR:\$LIB_DIR/*\"" config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q 'org.openpnp.Main' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q 'neway-openpnp' config/includes.chroot/etc/xdg/openbox/autostart

@@ -1,5 +1,5 @@
-# Runtime-only packages. Neway's prebuilt custom OpenPnP JAR is copied into /opt/openpnp by the ISO build.
-# Recommendations are disabled by live-build; explicitly include required runtime tools.
+# Runtime packages for the Debian Trixie OpenPnP appliance.
+# The custom OpenPnP app and all Java dependencies are fetched and copied by scripts/build-iso.sh.
 xserver-xorg-core
 xserver-xorg-video-fbdev
 xserver-xorg-input-libinput
@@ -27,3 +27,5 @@ openssh-server
 tpm2-tools
 gpgv
 nftables
+curl
+unzip

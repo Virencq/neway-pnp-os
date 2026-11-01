@@ -35,6 +35,14 @@ for path in "${required[@]}"; do
   [[ -s "$path" ]] || { printf 'Missing required file: %s\n' "$path" >&2; exit 1; }
 done
 
+# The Neway-supplied single-JAR application must be present and executable by java -jar.
+[[ -s openpnp-gui-0.0.1-alpha-SNAPSHOT.jar ]]
+command -v unzip >/dev/null
+unzip -tq openpnp-gui-0.0.1-alpha-SNAPSHOT.jar >/dev/null
+unzip -p openpnp-gui-0.0.1-alpha-SNAPSHOT.jar META-INF/MANIFEST.MF | grep -Eiq '^Main-Class:[[:space:]]*[^[:space:]]+'
+grep -q 'openpnp-gui.jar' scripts/build-iso.sh
+! grep -q 'git clone.*openpnp' .github/workflows/build-iso.yml
+
 for package in openjdk-21-jre xinit openbox user-setup network-manager wireguard-tools openssh-server tpm2-tools gpgv nftables; do
   grep -Fxq "$package" config/package-lists/neway.list.chroot
 done

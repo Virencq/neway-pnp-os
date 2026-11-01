@@ -1,24 +1,31 @@
 #!/bin/sh
 set -eu
 
-id neway >/dev/null 2>&1 || useradd --create-home --shell /bin/bash neway
-for group in dialout video plugdev input render; do
-    getent group "$group" >/dev/null 2>&1 && usermod -a -G "$group" neway || true
-done
-passwd --lock neway
-install -d -o neway -g neway -m 0750 /home/neway/.local/state/neway
-install -d -o root -g root -m 0755 /opt/openpnp
-if [ -f /usr/share/lightdm/lightdm.conf.d/50-neway-autologin.conf ]; then
-    rm -f /usr/share/lightdm/lightdm.conf.d/50-neway-autologin.conf
+# Create a deterministic appliance operator account in the image. Disable
+# live-config's default "user" account creation in --bootappend-live.
+if ! id nivo >/dev/null 2>&1; then
+    useradd --create-home --skel /etc/skel --shell /bin/bash nivo
 fi
-if [ -f /etc/systemd/system/getty@tty1.service.d/autologin.conf ]; then
-    :
-else
-    install -d /etc/systemd/system/getty@tty1.service.d
-    cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<'EOF'
+
+# TEST IMAGE CREDENTIAL ONLY. Replace during factory provisioning before
+# shipping machines; do not distribute production devices with this password.
+printf '%s\n' 'nivo:1234' | chpasswd
+
+for group in sudo dialout video plugdev input render; do
+    if getent group "$group" >/dev/null 2>&1; then
+        usermod -a -G "$group" nivo
+    fi
+done
+
+install -d -o nivo -g nivo -m 0750 /home/nivo/.local/state/neway
+install -d -o root -g root -m 0755 /opt/openpnp
+
+# Start the appliance GUI after automatic console login on tty1.
+install -d -o root -g root -m 0755 /etc/systemd/system/getty@tty1.service.d
+cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<'EOF'
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty --autologin neway --noclear %I $TERM
+ExecStart=-/sbin/agetty --autologin nivo --noclear %I $TERM
 EOF
-fi
+
 chmod 0755 /usr/local/bin/neway-openpnp

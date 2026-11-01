@@ -50,13 +50,21 @@ source_lib="${lib_dirs[0]}"
   exit 1
 }
 command -v java >/dev/null || { echo "Java is required to validate the application entry point." >&2; exit 1; }
-unzip -p "$source_jar" META-INF/MANIFEST.MF | grep -Eiq '^Main-Class:[[:space:]]*org\.openpnp\.Main[[:space:]]*$' || {
+# Save command output before matching. With set -o pipefail, grep -q can close a
+# pipe early and make unzip exit with SIGPIPE even when the requested entry exists.
+manifest_file="$staging_dir/openpnp-manifest.txt"
+entries_file="$staging_dir/openpnp-jar-entries.txt"
+unzip -p "$source_jar" META-INF/MANIFEST.MF > "$manifest_file"
+grep -Eiq '^Main-Class:[[:space:]]*org\.openpnp\.Main[[:space:]]*$' "$manifest_file" || {
   echo "Custom JAR manifest does not declare org.openpnp.Main." >&2
+  cat "$manifest_file" >&2
   exit 1
 }
 # Inspect JAR entries with unzip; the JRE image used by CI does not include the JDK 'jar' tool.
-unzip -Z1 "$source_jar" | grep -Fxq 'org/openpnp/Main.class' || {
+unzip -Z1 "$source_jar" > "$entries_file"
+grep -Fx 'org/openpnp/Main.class' "$entries_file" >/dev/null || {
   echo "Custom JAR does not contain org/openpnp/Main.class." >&2
+  grep -E '(^|/)Main([$.].*)?\.class$' "$entries_file" >&2 || true
   exit 1
 }
 find "$source_lib" -maxdepth 1 -type f -name 'javassist-*.jar' -print -quit | grep -q . || {

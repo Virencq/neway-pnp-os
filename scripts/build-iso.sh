@@ -44,6 +44,7 @@ lb config noauto \
   --distribution trixie \
   --architectures amd64 \
   --binary-images iso-hybrid \
+  --bootloaders "syslinux grub-efi" \
   --archive-areas "main contrib non-free-firmware" \
   --debian-installer none \
   --apt-recommends false \
@@ -52,7 +53,7 @@ lb config noauto \
   --firmware-chroot false \
   --memtest none \
   --security true \
-  --bootappend-live "boot=live components quiet"
+  --bootappend-live "boot=live components quiet username=nivo live-config.nocomponents=user-setup"
 
 lb build
 iso="$(find "$build_dir" -maxdepth 1 -type f -name '*.iso' -print -quit)"

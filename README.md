@@ -6,11 +6,11 @@ Minimal Debian Trixie amd64 live ISO prototype for Neway pick-and-place machines
 
 - Debian Live `live-build`, `--variant=minbase`, APT recommends and indices disabled.
 - Minimal Xorg/Openbox session; no full desktop environment.
-- The CI workflow builds the Neway-customized OpenPnP source and copies the runtime JAR and dependency libraries into the image.
+- The CI workflow uses the Neway-supplied `openpnp-gui-0.0.1-alpha-SNAPSHOT.jar` committed at the repository root. It does not clone or rebuild upstream OpenPnP. The ISO build installs it as `/opt/openpnp/openpnp-gui.jar` and records its SHA-256 checksum.
 - An unprivileged `neway` user autologs in on tty1. Openbox launches OpenPnP automatically.
 - CI validates shell configuration and the ISO checksum before uploading the artifact.
 
-## Machine identity and remote maintenance
+## Custom OpenPnP application artifact\n\nPlace the approved Neway-built executable JAR at the repository root using the exact filename `openpnp-gui-0.0.1-alpha-SNAPSHOT.jar`. CI validates ZIP/JAR integrity and requires a `Main-Class` manifest entry before building. The build copies it to `/opt/openpnp/openpnp-gui.jar`. This pipeline assumes the JAR is self-contained or that any manifest-declared runtime dependencies are otherwise available; a successful archive/manifest check does not prove the application starts or that camera/native-library support works. Verify the application on the target Debian image before production.\n\n## Machine identity and remote maintenance
 
 This feature branch adds:
 - NetworkManager DHCP/autoconnect for common USB phone tether drivers, with tether routes preferred over ordinary Ethernet routes.

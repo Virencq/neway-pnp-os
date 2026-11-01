@@ -41,7 +41,10 @@ command -v unzip >/dev/null
 unzip -tq openpnp-gui-0.0.1-alpha-SNAPSHOT.jar >/dev/null
 unzip -p openpnp-gui-0.0.1-alpha-SNAPSHOT.jar META-INF/MANIFEST.MF | grep -Eiq '^Main-Class:[[:space:]]*[^[:space:]]+'
 grep -q 'openpnp-gui.jar' scripts/build-iso.sh
-if grep -q 'git clone.*openpnp' .github/workflows/build-iso.yml; then\n  echo 'ISO workflow must not clone or rebuild upstream OpenPnP.' >&2\n  exit 1\nfi
+if grep -q 'git clone.*openpnp' .github/workflows/build-iso.yml; then
+  echo 'ISO workflow must not clone or rebuild upstream OpenPnP.' >&2
+  exit 1
+fi
 
 for package in openjdk-21-jre xinit openbox user-setup network-manager wireguard-tools openssh-server tpm2-tools gpgv nftables; do
   grep -Fxq "$package" config/package-lists/neway.list.chroot

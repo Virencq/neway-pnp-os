@@ -52,7 +52,8 @@ jobs:
               apt-get update
               DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
                 live-build debootstrap squashfs-tools xorriso \
-                grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates \
+                isolinux syslinux-common syslinux-utils grub-efi-amd64-bin \
+                mtools dosfstools ca-certificates \
                 shellcheck file unzip
               bash scripts/validate-config.sh
               bash scripts/build-iso.sh

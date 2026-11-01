@@ -54,7 +54,8 @@ unzip -p "$source_jar" META-INF/MANIFEST.MF | grep -Eiq '^Main-Class:[[:space:]]
   echo "Custom JAR manifest does not declare org.openpnp.Main." >&2
   exit 1
 }
-jar tf "$source_jar" | grep -Fxq 'org/openpnp/Main.class' || {
+# Inspect JAR entries with unzip; the JRE image used by CI does not include the JDK 'jar' tool.
+unzip -Z1 "$source_jar" | grep -Fxq 'org/openpnp/Main.class' || {
   echo "Custom JAR does not contain org/openpnp/Main.class." >&2
   exit 1
 }
@@ -74,7 +75,7 @@ rm -f "$output_dir/neway-pnp-os-amd64.iso" "$output_dir/SHA256SUMS"
 cp -a "$repo_root/config/." "$build_dir/config/"
 install -d "$build_dir/config/includes.chroot/opt/openpnp/lib"
 install -m 0644 "$source_jar" "$build_dir/config/includes.chroot/opt/openpnp/openpnp-gui.jar"
-find "$source_lib" -maxdepth 1 -type f -name '*.jar' -exec install -m 0644 {} "$build_dir/config/includes.chroot/opt/openpnp/lib/" \;
+find "$source_lib" -maxdepth 1 -type f -name '*.jar' -exec install -m 0644 {} "$build_dir/config/includes.chroot/opt/openpnp/lib/" \\;
 (
   cd "$build_dir/config/includes.chroot/opt/openpnp"
   sha256sum openpnp-gui.jar lib/*.jar > SHA256SUMS

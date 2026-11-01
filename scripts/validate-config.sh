@@ -35,22 +35,18 @@ for path in "${required[@]}"; do
   [[ -s "$path" ]] || { printf 'Missing required file: %s\n' "$path" >&2; exit 1; }
 done
 
-# The Neway-supplied single-JAR application must be present and executable by java -jar.
-[[ -s openpnp-gui-0.0.1-alpha-SNAPSHOT.jar ]]
-command -v unzip >/dev/null
-unzip -tq openpnp-gui-0.0.1-alpha-SNAPSHOT.jar >/dev/null
-unzip -p openpnp-gui-0.0.1-alpha-SNAPSHOT.jar META-INF/MANIFEST.MF | grep -Eiq '^Main-Class:[[:space:]]*[^[:space:]]+'
-grep -q 'openpnp-gui.jar' scripts/build-iso.sh
-grep -q -- '--bootloaders "syslinux grub-efi"' scripts/build-iso.sh
-grep -q 'username=nivo live-config.nocomponents=user-setup' scripts/build-iso.sh
-grep -q 'agetty --autologin nivo' config/hooks/live/9998-neway-operator.hook.chroot
-grep -q 'nivo:1234' config/hooks/live/9998-neway-operator.hook.chroot
+grep -Fq 'openpnp-gui.zip' scripts/build-iso.sh
+grep -Fq '88dea48de22621455b63c9e16e2ef5ca4ad62bb159f075ae924a79cbcebb40a8' scripts/build-iso.sh
+grep -Fq -- '--bootloaders "syslinux grub-efi"' scripts/build-iso.sh
+grep -Fq 'username=nivo live-config.nocomponents=user-setup' scripts/build-iso.sh
+grep -Fq 'agetty --autologin nivo' config/hooks/live/9998-neway-operator.hook.chroot
+grep -Fq 'nivo:1234' config/hooks/live/9998-neway-operator.hook.chroot
 if grep -q 'git clone.*openpnp' .github/workflows/build-iso.yml; then
   echo 'ISO workflow must not clone or rebuild upstream OpenPnP.' >&2
   exit 1
 fi
 
-for package in openjdk-21-jre xinit openbox user-setup network-manager wireguard-tools openssh-server tpm2-tools gpgv nftables; do
+for package in openjdk-21-jre xinit openbox user-setup network-manager wireguard-tools openssh-server tpm2-tools gpgv nftables unzip curl; do
   grep -Fxq "$package" config/package-lists/neway.list.chroot
 done
 if grep -Eq '^(maven|openjdk-21-jdk|git)$' config/package-lists/neway.list.chroot; then
@@ -58,14 +54,19 @@ if grep -Eq '^(maven|openjdk-21-jdk|git)$' config/package-lists/neway.list.chroo
   exit 1
 fi
 grep -q 'exec /usr/bin/java' config/includes.chroot/usr/local/bin/neway-openpnp
+grep -q -- '--add-opens=java.base/java.lang=ALL-UNNAMED' config/includes.chroot/usr/local/bin/neway-openpnp
+grep -q '"$JAR:$LIB_DIR/\*"' config/includes.chroot/usr/local/bin/neway-openpnp
+grep -q 'org.openpnp.Main' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q 'neway-openpnp' config/includes.chroot/etc/xdg/openbox/autostart
 grep -q 'ConditionPathExists=/etc/neway/maintenance-enabled' config/includes.chroot/etc/systemd/system/ssh.service.d/10-neway-gate.conf
 grep -q 'ExecStartPre=/usr/bin/ssh-keygen -A' config/includes.chroot/etc/systemd/system/ssh.service.d/10-neway-gate.conf
 grep -q 'iifname != "wg0" tcp dport 22 drop' config/includes.chroot/etc/nftables.d/neway-remote-access.nft
 grep -q 'iifname != "wg0" tcp dport 22 drop' docs/firewall-remote-access.nft
 grep -q 'gpgv --keyring' config/includes.chroot/usr/local/sbin/neway-update-guard
+
 bash -n scripts/build-iso.sh scripts/validate-config.sh
 bash -n config/hooks/live/9998-neway-operator.hook.chroot config/hooks/live/9999-neway-security.hook.chroot
+bash -n config/includes.chroot/usr/local/bin/neway-openpnp
 bash -n config/includes.chroot/usr/local/sbin/neway-machine-info
 bash -n config/includes.chroot/usr/local/sbin/neway-remote-maintenance-guard
 bash -n config/includes.chroot/usr/local/sbin/neway-enable-remote-maintenance

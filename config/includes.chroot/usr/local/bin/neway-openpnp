@@ -7,8 +7,8 @@ LOG_DIR="${HOME}/.local/state/neway"
 LOG_FILE="$LOG_DIR/openpnp.log"
 
 mkdir -p "$LOG_DIR"
-if [ ! -r "$JAR" ] || [ ! -d "$APP_DIR/lib" ]; then
-    printf '%s\n' "OpenPnP runtime files are missing from $APP_DIR." | tee -a "$LOG_FILE" >&2
+if [ ! -r "$JAR" ]; then
+    printf '%s\n' "Neway OpenPnP application JAR is missing: $JAR" | tee -a "$LOG_FILE" >&2
     exit 1
 fi
 

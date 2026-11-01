@@ -5,9 +5,17 @@ set -Eeuo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-app_dir="$repo_root/build-input/openpnp"
-[[ -s "$app_dir/openpnp-gui.jar" && -d "$app_dir/lib" ]] || {
-  echo "Missing prebuilt OpenPnP runtime at build-input/openpnp. Build upstream OpenPnP first." >&2
+# Neway-supplied, prebuilt application committed to this branch.
+source_jar="$repo_root/openpnp-gui-0.0.1-alpha-SNAPSHOT.jar"
+[[ -s "$source_jar" ]] || {
+  echo "Missing custom OpenPnP JAR: $source_jar" >&2
+  exit 1
+}
+command -v unzip >/dev/null || { echo "unzip is required to validate the custom JAR." >&2; exit 1; }
+unzip -tq "$source_jar" >/dev/null
+manifest="$(unzip -p "$source_jar" META-INF/MANIFEST.MF)"
+printf '%s\n' "$manifest" | grep -Eiq '^Main-Class:[[:space:]]*[^[:space:]]+' || {
+  echo "Custom JAR manifest has no Main-Class; cannot launch with java -jar." >&2
   exit 1
 }
 
@@ -19,7 +27,13 @@ mkdir -p "$build_dir/config" "$output_dir"
 rm -f "$output_dir/neway-pnp-os-amd64.iso" "$output_dir/SHA256SUMS"
 cp -a "$repo_root/config/." "$build_dir/config/"
 install -d "$build_dir/config/includes.chroot/opt/openpnp"
-cp -a "$app_dir/." "$build_dir/config/includes.chroot/opt/openpnp/"
+install -m 0644 "$source_jar" "$build_dir/config/includes.chroot/opt/openpnp/openpnp-gui.jar"
+(
+  cd "$build_dir/config/includes.chroot/opt/openpnp"
+  sha256sum openpnp-gui.jar > openpnp-gui.jar.sha256
+)
+printf 'Neway custom OpenPnP artifact: %s\n' "$(sha256sum "$source_jar" | cut -d ' ' -f1)" \
+  > "$build_dir/config/includes.chroot/opt/openpnp/BUILD-INFO.txt"
 find "$build_dir/config/hooks/live" -type f -name '*.hook.chroot' -exec chmod 0755 {} +
 chmod 0755 "$build_dir/config/includes.chroot/usr/local/bin/neway-openpnp"
 chmod 0755 "$build_dir/config/includes.chroot/etc/skel/.xinitrc"
@@ -45,7 +59,6 @@ iso="$(find "$build_dir" -maxdepth 1 -type f -name '*.iso' -print -quit)"
 [[ -n "$iso" && -s "$iso" ]] || { echo "live-build did not produce an ISO." >&2; exit 1; }
 
 size_bytes="$(stat -c '%s' "$iso")"
-
 install -m 0644 "$iso" "$output_dir/neway-pnp-os-amd64.iso"
 (
   cd "$output_dir"

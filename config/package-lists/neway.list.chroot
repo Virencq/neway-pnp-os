@@ -1,4 +1,4 @@
-# Runtime-only packages. OpenPnP is built separately in CI and copied into /opt/openpnp.
+# Runtime-only packages. Neway's prebuilt custom OpenPnP JAR is copied into /opt/openpnp by the ISO build.
 # Recommendations are disabled by live-build; explicitly include required runtime tools.
 xserver-xorg-core
 xserver-xorg-video-fbdev

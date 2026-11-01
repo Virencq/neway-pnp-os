@@ -46,7 +46,7 @@ if grep -q 'git clone.*openpnp' .github/workflows/build-iso.yml; then
   exit 1
 fi
 
-for package in openjdk-21-jre xinit openbox user-setup network-manager wireguard-tools openssh-server tpm2-tools gpgv nftables unzip curl; do
+for package in openjdk-21-jre xinit openbox xterm spice-vdagent xserver-xorg-video-qxl user-setup network-manager wireguard-tools openssh-server tpm2-tools gpgv nftables unzip curl; do
   grep -Fxq "$package" config/package-lists/neway.list.chroot
 done
 if grep -Eq '^(maven|openjdk-21-jdk|git)$' config/package-lists/neway.list.chroot; then
@@ -55,6 +55,8 @@ if grep -Eq '^(maven|openjdk-21-jdk|git)$' config/package-lists/neway.list.chroo
 fi
 grep -q 'exec /usr/bin/java' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q -- '--add-opens=java.base/java.lang=ALL-UNNAMED' config/includes.chroot/usr/local/bin/neway-openpnp
+grep -q -- '--add-opens=java.desktop/java.awt=ALL-UNNAMED' config/includes.chroot/usr/local/bin/neway-openpnp
+grep -q 'mkdir -p "\$HOME/.local/share/xorg" "\$HOME/.openpnp2"' config/includes.chroot/etc/skel/.bash_profile
 grep -Fq -- "-cp \"\$JAR:\$LIB_DIR/*\"" config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q 'org.openpnp.Main' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q 'neway-openpnp' config/includes.chroot/etc/xdg/openbox/autostart

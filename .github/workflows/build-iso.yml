@@ -3,12 +3,11 @@ name: Build Neway OpenPnP ISO
 on:
   push:
     branches:
-      - "feat/under-400mb-openpnp-iso"
-      - "feat/os-custom-openpnp-integration"
-      - "feat/machine-identity-remote-maintenance"
+      - "feat/custom-openpnp-jar-input"
   pull_request:
     paths:
       - ".github/workflows/build-iso.yml"
+      - "openpnp-gui-0.0.1-alpha-SNAPSHOT.jar"
       - "config/**"
       - "scripts/**"
       - "tests/**"
@@ -32,41 +31,18 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Validate scripts and security scaffolding
+      - name: Validate scripts and custom application artifact
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends shellcheck
+          sudo apt-get install --yes --no-install-recommends shellcheck unzip
+          test -s openpnp-gui-0.0.1-alpha-SNAPSHOT.jar
+          unzip -tq openpnp-gui-0.0.1-alpha-SNAPSHOT.jar
+          unzip -p openpnp-gui-0.0.1-alpha-SNAPSHOT.jar META-INF/MANIFEST.MF | grep -Eiq '^Main-Class:[[:space:]]*[^[:space:]]+'
           bash -n scripts/build-iso.sh scripts/validate-config.sh tests/*.sh
           shellcheck scripts/build-iso.sh scripts/validate-config.sh tests/*.sh
           bash scripts/validate-config.sh
 
-      - name: Build Neway custom OpenPnP runtime
-        run: |
-          docker run --rm \
-            --volume "$GITHUB_WORKSPACE:/work" \
-            --workdir /tmp \
-            debian:trixie \
-            bash -euxc '
-              apt-get update
-              DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends ca-certificates git maven openjdk-21-jdk
-              git clone --depth 1 --branch feat/openpnp-deb-package https://github.com/Virencq/neway-pnp-os.git /tmp/openpnp
-              cd /tmp/openpnp
-              echo "OpenPnP source commit: $(git rev-parse HEAD)"
-              find src -type f -name "*.java" -exec sed -i "s/\\r$//" {} +
-              apt-get install --yes --no-install-recommends dpkg-dev curl
-              bash -n build-deb.sh
-              bash build-deb.sh --rebuild
-              DEB="$(find dist -maxdepth 1 -type f -name "*.deb" -print -quit)"
-              test -n "$DEB"
-              dpkg-deb --info "$DEB"
-              mkdir -p /tmp/openpnp-deb
-              dpkg-deb --extract "$DEB" /tmp/openpnp-deb
-              install -d /work/build-input/openpnp/lib
-              install -m 0644 /tmp/openpnp-deb/opt/openpnp/openpnp.jar /work/build-input/openpnp/openpnp-gui.jar
-              cp -a /tmp/openpnp-deb/opt/openpnp/lib/. /work/build-input/openpnp/lib/
-            '
-
-      - name: Build ISO
+      - name: Build ISO with Neway custom OpenPnP JAR
         run: |
           docker run --rm --privileged \
             --volume "$GITHUB_WORKSPACE:/work" \
@@ -77,7 +53,7 @@ jobs:
               DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
                 live-build debootstrap squashfs-tools xorriso \
                 grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates \
-                shellcheck file
+                shellcheck file unzip
               bash scripts/validate-config.sh
               bash scripts/build-iso.sh
               file build-output/neway-pnp-os-amd64.iso

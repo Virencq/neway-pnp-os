@@ -75,7 +75,7 @@ rm -f "$output_dir/neway-pnp-os-amd64.iso" "$output_dir/SHA256SUMS"
 cp -a "$repo_root/config/." "$build_dir/config/"
 install -d "$build_dir/config/includes.chroot/opt/openpnp/lib"
 install -m 0644 "$source_jar" "$build_dir/config/includes.chroot/opt/openpnp/openpnp-gui.jar"
-find "$source_lib" -maxdepth 1 -type f -name '*.jar' -exec install -m 0644 {} "$build_dir/config/includes.chroot/opt/openpnp/lib/" \\;
+find "$source_lib" -maxdepth 1 -type f -name '*.jar' -exec install -m 0644 {} "$build_dir/config/includes.chroot/opt/openpnp/lib/" \;
 (
   cd "$build_dir/config/includes.chroot/opt/openpnp"
   sha256sum openpnp-gui.jar lib/*.jar > SHA256SUMS

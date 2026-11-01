@@ -55,7 +55,7 @@ if grep -Eq '^(maven|openjdk-21-jdk|git)$' config/package-lists/neway.list.chroo
 fi
 grep -q 'exec /usr/bin/java' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q -- '--add-opens=java.base/java.lang=ALL-UNNAMED' config/includes.chroot/usr/local/bin/neway-openpnp
-grep -q '"$JAR:$LIB_DIR/\*"' config/includes.chroot/usr/local/bin/neway-openpnp
+grep -Fq -- '-cp "$JAR:$LIB_DIR/*"' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q 'org.openpnp.Main' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q 'neway-openpnp' config/includes.chroot/etc/xdg/openbox/autostart
 grep -q 'ConditionPathExists=/etc/neway/maintenance-enabled' config/includes.chroot/etc/systemd/system/ssh.service.d/10-neway-gate.conf

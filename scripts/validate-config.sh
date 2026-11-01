@@ -41,6 +41,10 @@ command -v unzip >/dev/null
 unzip -tq openpnp-gui-0.0.1-alpha-SNAPSHOT.jar >/dev/null
 unzip -p openpnp-gui-0.0.1-alpha-SNAPSHOT.jar META-INF/MANIFEST.MF | grep -Eiq '^Main-Class:[[:space:]]*[^[:space:]]+'
 grep -q 'openpnp-gui.jar' scripts/build-iso.sh
+grep -q -- '--bootloaders "syslinux grub-efi"' scripts/build-iso.sh
+grep -q 'username=nivo live-config.nocomponents=user-setup' scripts/build-iso.sh
+grep -q 'agetty --autologin nivo' config/hooks/live/9998-neway-operator.hook.chroot
+grep -q 'nivo:1234' config/hooks/live/9998-neway-operator.hook.chroot
 if grep -q 'git clone.*openpnp' .github/workflows/build-iso.yml; then
   echo 'ISO workflow must not clone or rebuild upstream OpenPnP.' >&2
   exit 1

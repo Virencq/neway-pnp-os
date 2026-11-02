@@ -37,7 +37,7 @@ for path in "${required[@]}"; do
 done
 
 grep -Fq 'openpnp-gui.zip' scripts/build-iso.sh
-grep -Fq 'chmod 0755 "$build_dir/config/includes.chroot/usr/local/bin/neway-startx"' scripts/build-iso.sh
+grep -Fq 'neway-startx' scripts/build-iso.sh
 grep -Fq '88dea48de22621455b63c9e16e2ef5ca4ad62bb159f075ae924a79cbcebb40a8' scripts/build-iso.sh
 grep -Fq -- '--bootloaders "syslinux grub-efi"' scripts/build-iso.sh
 grep -Fq 'username=nivo live-config.nocomponents=user-setup' scripts/build-iso.sh

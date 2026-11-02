@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+fail() { echo "Neway WireGuard blocked: $1" >&2; exit 1; }
+SERIAL_FILE=/etc/neway/machine-serial
+WG_CONFIG=/etc/wireguard/wg0.conf
+ATTESTATION=/var/lib/neway/identity/controller-attestation.verified
+
+[ -r "$SERIAL_FILE" ] || fail "machine serial is not provisioned"
+[ "$(stat -c '%U:%G' "$SERIAL_FILE")" = root:root ] || fail "machine serial must be root-owned"
+[ "$(stat -c '%a' "$SERIAL_FILE")" = 644 ] || fail "machine serial must have mode 0644"
+SERIAL=$(tr -d '\r\n' < "$SERIAL_FILE")
+case "$SERIAL" in NEWAY-PNP-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]) ;; *) fail "invalid machine serial" ;; esac
+
+[ -c /dev/tpmrm0 ] || [ -c /dev/tpm0 ] || fail "TPM device is not available"
+[ -f "$ATTESTATION" ] || fail "controller attestation is not verified"
+[ "$(stat -c '%U:%G' "$ATTESTATION")" = root:root ] || fail "attestation marker must be root-owned"
+[ "$(stat -c '%a' "$ATTESTATION")" = 600 ] || fail "attestation marker must have mode 0600"
+[ "$(cat "$ATTESTATION")" = verified ] || fail "attestation marker is invalid"
+
+[ -f "$WG_CONFIG" ] || fail "unique WireGuard configuration is not provisioned"
+[ "$(stat -c '%U:%G' "$WG_CONFIG")" = root:root ] || fail "WireGuard config must be root-owned"
+[ "$(stat -c '%a' "$WG_CONFIG")" = 600 ] || fail "WireGuard config must have mode 0600"
+wg-quick strip "$WG_CONFIG" >/dev/null 2>&1 || fail "WireGuard config failed validation"

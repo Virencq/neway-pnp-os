@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+# Enable NetworkManager in the live image and in the installed system.
+# Do not enable competing network managers.
+systemctl enable NetworkManager.service

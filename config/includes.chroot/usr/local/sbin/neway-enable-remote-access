@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+[ "$(id -u)" -eq 0 ] || { echo "Run as root." >&2; exit 77; }
+[ -f /etc/neway/rustdesk-server.conf ] || {
+    echo "Configure the Neway RustDesk server first with neway-configure-rustdesk." >&2
+    exit 1
+}
+[ -f /etc/wireguard/wg0.conf ] || { echo "Provision a unique /etc/wireguard/wg0.conf first." >&2; exit 1; }
+
+/usr/local/sbin/neway-wireguard-guard
+systemctl enable --now nftables.service
+systemctl is-active --quiet nftables.service || { echo "Firewall failed to start." >&2; exit 1; }
+systemctl enable --now wg-quick@wg0.service
+ip link show wg0 >/dev/null 2>&1 || { echo "WireGuard did not start." >&2; exit 1; }
+systemctl enable --now rustdesk.service
+systemctl is-active --quiet rustdesk.service || { echo "RustDesk service failed to start." >&2; exit 1; }
+
+echo "Neway remote access is online: WireGuard VPN and RustDesk service are active."
+echo "SSH remains separately gated; run neway-enable-remote-maintenance only after technician keys are provisioned."

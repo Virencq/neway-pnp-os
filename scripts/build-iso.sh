@@ -40,7 +40,7 @@ unzip -tq "$artifact_zip" >/dev/null
 
 echo "Downloading pinned official RustDesk client..."
 curl --fail --location --retry 3 --retry-delay 2 --output "$rustdesk_deb" "$rustdesk_url"
-printf '%s  %s\\n' "$rustdesk_sha256" "$rustdesk_deb" | sha256sum --check --status || {
+printf '%s  %s\n' "$rustdesk_sha256" "$rustdesk_deb" | sha256sum --check --status || {
   echo "RustDesk release SHA-256 mismatch; refusing to build." >&2
   exit 1
 }

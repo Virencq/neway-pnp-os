@@ -14,19 +14,27 @@ This checklist is for a persistent installed system, not a shared live ISO.
    The verifier must reject stale/replayed challenges, invalid signatures, wrong controller
    identity, and revoked credentials.
 6. Register serial, TPM identity, controller identity, model/revision, and release versions.
-7. Install a unique WireGuard config at `/etc/wireguard/wg0.conf` (root:root, mode 0600).
-8. Install the authorized technician public keys in a member account of
+7. Generate a unique WireGuard private key on the device or in a controlled HSM-backed
+   provisioning service. Install its peer config at `/etc/wireguard/wg0.conf`
+   (root:root, mode 0600). Never clone a peer config across devices.
+8. Configure the Neway RustDesk self-hosted ID server and public key:
+   `neway-configure-rustdesk ID_SERVER PUBLIC_KEY`. The server's hbbs/hbbr
+   infrastructure must already be deployed and reachable.
+9. Run `neway-enable-remote-access`. This starts nftables, brings up wg0 and
+   enables the RustDesk service. wg-quick@wg0 is enabled for automatic boot reconnect.
+   Verify `wg show wg0` and the RustDesk service state.
+10. Install the authorized technician public keys in a member account of
    `neway-maintenance`; do not use passwords or root SSH.
-9. Only after the secure-element verifier has checked the controller, create
+11. Only after the secure-element verifier has checked the controller, create
    `/var/lib/neway/identity/controller-attestation.verified` as root:root mode 0600,
    with the exact contents `verified`. This file is a gate contract, not proof by itself.
-10. Install the Neway update public keyring at `/etc/neway/update-trust.gpg` as root:root.
+12. Install the Neway update public keyring at `/etc/neway/update-trust.gpg` as root:root.
     Keep the private approval/signing key offline and outside the device and repository.
-11. Run `neway-machine-info`, `neway-remote-maintenance-guard --preflight`, then
-    `neway-enable-remote-maintenance`.
-12. Verify that TCP/22 is unreachable on Ethernet/Wi-Fi/USB-tether interfaces and reachable
+13. Run `neway-machine-info`, `neway-remote-maintenance-guard --preflight`, then
+    `neway-enable-remote-maintenance` to enable SSH separately.
+14. Verify that TCP/22 is unreachable on Ethernet/Wi-Fi/USB-tether interfaces and reachable
     only through the authorized WireGuard peer.
-13. Disconnect/reconnect the phone, reboot twice, and confirm serial, VPN identity and
+15. Disconnect/reconnect the phone, reboot twice, and confirm serial, VPN identity and
     revocation state remain correct.
 
 ## Update approval preflight

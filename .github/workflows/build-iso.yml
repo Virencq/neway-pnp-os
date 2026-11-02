@@ -29,7 +29,7 @@ jobs:
             -v "$GITHUB_WORKSPACE:/build" \
             -w /build \
             debian:trixie-slim \
-            bash -euxo pipefail -c '
+            sh -euxc '
               apt-get update
               DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
                 live-build debootstrap xorriso squashfs-tools dosfstools mtools \

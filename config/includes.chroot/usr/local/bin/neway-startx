@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+if [ "$(id -u)" -eq 0 ]; then
+    echo "Refusing to start the Neway graphical session as root." >&2
+    exit 1
+fi
+
+install -d -m 0750 -o "$(id -u)" -g "$(id -g)" \
+    "$HOME/.local/share/xorg" \
+    "$HOME/.openpnp2" \
+    "$HOME/.local/state/neway"
+
+exec /usr/bin/startx -- -nolisten tcp vt1

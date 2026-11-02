@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+[ -f /etc/neway/rustdesk-server.conf ] || exit 0
+exec /usr/bin/rustdesk --tray

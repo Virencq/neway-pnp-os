@@ -48,7 +48,7 @@ if grep -q 'git clone.*openpnp' .github/workflows/build-iso.yml; then
   exit 1
 fi
 
-for package in openjdk-21-jre xinit openbox xterm spice-vdagent xserver-xorg-video-qxl user-setup network-manager wireguard-tools openssh-server tpm2-tools gpgv nftables unzip curl; do
+for package in openjdk-21-jre xinit openbox xterm spice-vdagent xserver-xorg-video-qxl xserver-xorg-video-vmware open-vm-tools open-vm-tools-desktop user-setup network-manager wireguard-tools openssh-server tpm2-tools gpgv nftables unzip curl; do
   grep -Fxq "$package" config/package-lists/neway.list.chroot
 done
 if grep -Eq '^(maven|openjdk-21-jdk|git)$' config/package-lists/neway.list.chroot; then

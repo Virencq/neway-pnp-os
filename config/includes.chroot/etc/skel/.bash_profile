@@ -1,4 +1,4 @@
 # Start the operator GUI only on the first virtual terminal.
 if [ -z "${DISPLAY:-}" ] && [ "$(tty 2>/dev/null)" = "/dev/tty1" ]; then
-    exec /usr/local/bin/neway-startx
+    exec /bin/sh /usr/local/bin/neway-startx
 fi

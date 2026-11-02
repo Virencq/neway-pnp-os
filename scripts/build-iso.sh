@@ -124,7 +124,8 @@ lb config noauto \
   --binary-images iso-hybrid \
   --bootloaders "syslinux grub-efi" \
   --archive-areas "main contrib non-free-firmware" \
-  --debian-installer none \
+  --debian-installer live \
+  --debian-installer-gui true \
   --apt-recommends false \
   --apt-indices false \
   --debootstrap-options "--variant=minbase" \

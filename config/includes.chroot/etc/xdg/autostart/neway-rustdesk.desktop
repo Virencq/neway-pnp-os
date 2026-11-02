@@ -1,7 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Neway Remote Assistance
-Comment=Neway authenticated remote desktop support
-Exec=/usr/local/bin/neway-rustdesk-ui
-Terminal=false
-X-GNOME-Autostart-enabled=true

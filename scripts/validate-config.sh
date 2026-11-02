@@ -18,6 +18,13 @@ required=(
   config/includes.chroot/usr/local/sbin/neway-machine-info
   config/includes.chroot/usr/local/sbin/neway-remote-maintenance-guard
   config/includes.chroot/usr/local/sbin/neway-enable-remote-maintenance
+  config/includes.chroot/usr/local/sbin/neway-wireguard-guard
+  config/includes.chroot/usr/local/sbin/neway-configure-rustdesk
+  config/includes.chroot/usr/local/sbin/neway-enable-remote-access
+  config/includes.chroot/usr/local/bin/neway-rustdesk-ui
+  config/includes.chroot/etc/systemd/system/wg-quick@wg0.service.d/10-neway-identity-gate.conf
+  config/includes.chroot/etc/systemd/system/rustdesk.service.d/10-neway-provisioning.conf
+  config/includes.chroot/etc/xdg/autostart/neway-rustdesk.desktop
   config/includes.chroot/usr/local/sbin/neway-update-guard
   config/includes.chroot/etc/NetworkManager/conf.d/20-neway-usb-tethering.conf
   config/includes.chroot/etc/NetworkManager/system-connections/Neway-wired-and-USB-tethering.nmconnection
@@ -37,6 +44,8 @@ for path in "${required[@]}"; do
 done
 
 grep -Fq 'openpnp-gui.zip' scripts/build-iso.sh
+grep -Fq 'rustdesk-1.5.1-x86_64.deb' scripts/build-iso.sh
+grep -Fq 'b5d682ad90cb7571ecbdbf26eef58d3c4514e726a74ef6d08ce3f0b114ef0bd9' scripts/build-iso.sh
 grep -Fq 'neway-startx' scripts/build-iso.sh
 grep -Fq '88dea48de22621455b63c9e16e2ef5ca4ad62bb159f075ae924a79cbcebb40a8' scripts/build-iso.sh
 grep -Fq -- '--bootloaders "syslinux grub-efi"' scripts/build-iso.sh
@@ -70,11 +79,19 @@ grep -q 'ExecStartPre=/usr/bin/ssh-keygen -A' config/includes.chroot/etc/systemd
 grep -q 'iifname != "wg0" tcp dport 22 drop' config/includes.chroot/etc/nftables.d/neway-remote-access.nft
 grep -q 'iifname != "wg0" tcp dport 22 drop' docs/firewall-remote-access.nft
 grep -q 'gpgv --keyring' config/includes.chroot/usr/local/sbin/neway-update-guard
+grep -Fq 'systemctl --root=/ enable wg-quick@wg0.service' config/hooks/live/9999-neway-security.hook.chroot
+grep -Fq 'ExecStartPre=/usr/local/sbin/neway-wireguard-guard' config/includes.chroot/etc/systemd/system/wg-quick@wg0.service.d/10-neway-identity-gate.conf
+grep -Fq 'ConditionPathExists=/etc/neway/rustdesk-server.conf' config/includes.chroot/etc/systemd/system/rustdesk.service.d/10-neway-provisioning.conf
+grep -Fq 'neway-configure-rustdesk' config/includes.chroot/usr/local/sbin/neway-enable-remote-access
 
 bash -n scripts/build-iso.sh scripts/validate-config.sh
 bash -n config/hooks/live/9998-neway-operator.hook.chroot config/hooks/live/9999-neway-security.hook.chroot
 bash -n config/includes.chroot/usr/local/bin/neway-openpnp
 sh -n config/includes.chroot/usr/local/bin/neway-startx
+sh -n config/includes.chroot/usr/local/sbin/neway-wireguard-guard
+sh -n config/includes.chroot/usr/local/sbin/neway-configure-rustdesk
+sh -n config/includes.chroot/usr/local/sbin/neway-enable-remote-access
+sh -n config/includes.chroot/usr/local/bin/neway-rustdesk-ui
 bash -n config/includes.chroot/usr/local/sbin/neway-machine-info
 bash -n config/includes.chroot/usr/local/sbin/neway-remote-maintenance-guard
 bash -n config/includes.chroot/usr/local/sbin/neway-enable-remote-maintenance

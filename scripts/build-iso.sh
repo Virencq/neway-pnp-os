@@ -97,6 +97,7 @@ find "$source_lib" -maxdepth 1 -type f -name '*.jar' -exec install -m 0644 {} "$
 
 find "$build_dir/config/hooks/live" -type f -name '*.hook.chroot' -exec chmod 0755 {} +
 chmod 0755 "$build_dir/config/includes.chroot/usr/local/bin/neway-openpnp"
+chmod 0755 "$build_dir/config/includes.chroot/usr/local/bin/neway-startx"
 chmod 0755 "$build_dir/config/includes.chroot/etc/skel/.xinitrc"
 
 cd "$build_dir"

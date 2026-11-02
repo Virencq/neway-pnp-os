@@ -1,0 +1,18 @@
+# Core networking and hardware support. Installed in both live and installed systems.
+network-manager
+wpasupplicant
+iw
+rfkill
+iproute2
+iputils-ping
+curl
+ca-certificates
+usbutils
+pciutils
+udev
+firmware-linux
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+firmware-brcm80211
+firmware-mediatek

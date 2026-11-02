@@ -1,0 +1,42 @@
+#!/bin/sh
+set -eu
+
+[ "$(id -u)" -eq 0 ] || { echo "Run as root." >&2; exit 77; }
+[ "$#" -eq 2 ] || { echo "Usage: neway-configure-rustdesk ID_SERVER PUBLIC_KEY" >&2; exit 64; }
+ID_SERVER=$1
+PUBLIC_KEY=$2
+
+case "$ID_SERVER" in
+    *[!A-Za-z0-9.:-]*|'') echo "Invalid ID server hostname or host:port." >&2; exit 64 ;;
+esac
+case "$ID_SERVER" in *:*) HOST=${ID_SERVER%:*} ;; *) HOST=$ID_SERVER ;; esac
+[ -n "$HOST" ] || { echo "Invalid ID server." >&2; exit 64; }
+case "$PUBLIC_KEY" in *[!A-Za-z0-9+/=]*|'') echo "Invalid RustDesk public key." >&2; exit 64 ;; esac
+
+install -d -o root -g root -m 0700 /etc/neway /root/.config/rustdesk
+install -d -o nivo -g nivo -m 0700 /home/nivo/.config/rustdesk
+umask 077
+printf '%s\n' "$ID_SERVER" > /etc/neway/rustdesk-id-server
+printf '%s\n' "$PUBLIC_KEY" > /etc/neway/rustdesk-public-key
+chown root:root /etc/neway/rustdesk-id-server /etc/neway/rustdesk-public-key
+chmod 0600 /etc/neway/rustdesk-id-server /etc/neway/rustdesk-public-key
+
+write_config() {
+    target=$1
+    cat > "$target" <<EOF
+rendezvous_server = '$ID_SERVER'
+
+[options]
+custom-rendezvous-server = '$HOST'
+relay-server = '$HOST'
+key = '$PUBLIC_KEY'
+EOF
+}
+write_config /root/.config/rustdesk/RustDesk2.toml
+write_config /home/nivo/.config/rustdesk/RustDesk2.toml
+chown root:root /root/.config/rustdesk/RustDesk2.toml
+chown nivo:nivo /home/nivo/.config/rustdesk/RustDesk2.toml
+chmod 0600 /root/.config/rustdesk/RustDesk2.toml /home/nivo/.config/rustdesk/RustDesk2.toml
+install -o root -g root -m 0600 /dev/null /etc/neway/rustdesk-server.conf
+systemctl restart rustdesk.service
+echo "RustDesk configured for the Neway self-hosted ID server. No permanent access password was created."

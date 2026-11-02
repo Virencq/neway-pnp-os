@@ -1,3 +1,6 @@
 #!/bin/sh
 # Launch OpenPnP without blocking Openbox session startup.
 ( sleep 2; exec /usr/local/bin/neway-openpnp ) &
+
+# Start the RustDesk tray only after the self-hosted server is provisioned.
+( sleep 4; exec /usr/local/bin/neway-rustdesk-ui ) &

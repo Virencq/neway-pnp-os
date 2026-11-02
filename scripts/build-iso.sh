@@ -45,8 +45,7 @@ printf '%s  %s\\n' "$rustdesk_sha256" "$rustdesk_deb" | sha256sum --check --stat
   exit 1
 }
 dpkg-deb --info "$rustdesk_deb" >/dev/null
-install -d "$build_dir/config/packages.chroot"
-install -m 0644 "$rustdesk_deb" "$build_dir/config/packages.chroot/"
+
 unzip -q "$artifact_zip" -d "$staging_dir"
 
 # Accept either archive-root files or one containing directory, but require one JAR and lib/*.jar.
@@ -96,6 +95,8 @@ rm -rf -- "$build_dir"
 mkdir -p "$build_dir/config"
 rm -f "$output_dir/neway-pnp-os-amd64.iso" "$output_dir/SHA256SUMS"
 cp -a "$repo_root/config/." "$build_dir/config/"
+install -d "$build_dir/config/packages.chroot"
+install -m 0644 "$rustdesk_deb" "$build_dir/config/packages.chroot/"
 install -d "$build_dir/config/includes.chroot/opt/openpnp/lib"
 install -m 0644 "$source_jar" "$build_dir/config/includes.chroot/opt/openpnp/openpnp-gui.jar"
 find "$source_lib" -maxdepth 1 -type f -name '*.jar' -exec install -m 0644 {} "$build_dir/config/includes.chroot/opt/openpnp/lib/" \;

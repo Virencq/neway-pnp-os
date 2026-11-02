@@ -141,3 +141,5 @@ boot the authorized machine; keep a recovery method under Neway control.
 - Debian Trixie unattended-upgrades: https://manpages.debian.org/trixie/unattended-upgrades/unattended-upgrade.8.en.html
 - TUF specification: https://theupdateframework.github.io/specification/v1.0.20/
 - WireGuard quick start: https://www.wireguard.com/quickstart/
+- RustDesk self-hosting (hbbs/hbbr and firewall ports): https://rustdesk.com/docs/en/self-host/
+- RustDesk Linux client installation and configuration: https://rustdesk.com/docs/en/client/linux/ and https://rustdesk.com/docs/en/self-host/client-configuration/

@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+
+# Debian Live build configuration for Neway PnP OS.
+# Keep this script idempotent: live-build invokes it repeatedly.
+lb config noauto \
+  --mode debian \
+  --distribution trixie \
+  --architectures amd64 \
+  --binary-images iso-hybrid \
+  --debian-installer live \
+  --debian-installer-gui true \
+  --archive-areas "main contrib non-free non-free-firmware" \
+  --apt-recommends false \
+  --apt-indices false \
+  --apt-source-archives false \
+  --memtest none \
+  --iso-application "Neway PnP OS" \
+  --iso-volume "NEWAY_PNP_OS" \
+  --bootappend-live "boot=live components quiet splash" \
+  "${@}"

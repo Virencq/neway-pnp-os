@@ -17,7 +17,12 @@ for group in sudo dialout video plugdev input render; do
     fi
 done
 
-install -d -o nivo -g nivo -m 0750 /home/nivo/.local/state/neway
+install -d -o nivo -g nivo -m 0750 \
+    /home/nivo/.local \
+    /home/nivo/.local/share \
+    /home/nivo/.local/share/xorg \
+    /home/nivo/.local/state/neway \
+    /home/nivo/.openpnp2
 install -d -o root -g root -m 0755 /opt/openpnp
 
 # Start the appliance GUI after automatic console login on tty1.

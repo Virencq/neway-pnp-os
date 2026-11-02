@@ -9,6 +9,7 @@ required=(
   config/includes.chroot/etc/skel/.xinitrc
   config/includes.chroot/etc/xdg/openbox/autostart
   config/includes.chroot/usr/local/bin/neway-openpnp
+  config/includes.chroot/usr/local/bin/neway-startx
   config/hooks/live/9998-neway-operator.hook.chroot
   config/hooks/live/9999-neway-security.hook.chroot
   config/includes.chroot/etc/ssh/sshd_config.d/60-neway-maintenance.conf
@@ -56,7 +57,9 @@ fi
 grep -q 'exec /usr/bin/java' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q -- '--add-opens=java.base/java.lang=ALL-UNNAMED' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q -- '--add-opens=java.desktop/java.awt=ALL-UNNAMED' config/includes.chroot/usr/local/bin/neway-openpnp
-grep -Fq "mkdir -p \"\$HOME/.local/share/xorg\" \"\$HOME/.openpnp2\"" config/includes.chroot/etc/skel/.bash_profile
+grep -Fq 'exec /bin/sh /usr/local/bin/neway-startx' config/includes.chroot/etc/skel/.bash_profile
+grep -Fq 'install -d -m 0750' config/includes.chroot/usr/local/bin/neway-startx
+grep -Fq '/usr/bin/startx -- -nolisten tcp vt1' config/includes.chroot/usr/local/bin/neway-startx
 grep -Fq -- "-cp \"\$JAR:\$LIB_DIR/*\"" config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q 'org.openpnp.Main' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q 'neway-openpnp' config/includes.chroot/etc/xdg/openbox/autostart
@@ -69,6 +72,7 @@ grep -q 'gpgv --keyring' config/includes.chroot/usr/local/sbin/neway-update-guar
 bash -n scripts/build-iso.sh scripts/validate-config.sh
 bash -n config/hooks/live/9998-neway-operator.hook.chroot config/hooks/live/9999-neway-security.hook.chroot
 bash -n config/includes.chroot/usr/local/bin/neway-openpnp
+sh -n config/includes.chroot/usr/local/bin/neway-startx
 bash -n config/includes.chroot/usr/local/sbin/neway-machine-info
 bash -n config/includes.chroot/usr/local/sbin/neway-remote-maintenance-guard
 bash -n config/includes.chroot/usr/local/sbin/neway-enable-remote-maintenance

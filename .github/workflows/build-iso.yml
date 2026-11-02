@@ -1,0 +1,54 @@
+name: Build Neway PnP OS ISO
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - fix/installer-networking-build
+    paths:
+      - 'auto/**'
+      - 'config/**'
+      - 'scripts/**'
+      - '.github/workflows/build-iso.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Debian Trixie live image
+        run: |
+          docker run --privileged --rm \
+            -v "$GITHUB_WORKSPACE:/build" \
+            -w /build \
+            debian:trixie-slim \
+            bash -euxo pipefail -c '
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+                live-build debootstrap xorriso squashfs-tools dosfstools mtools \
+                grub-pc-bin grub-efi-amd64-bin grub-efi-amd64-signed shim-signed \
+                ca-certificates
+              lb config
+              lb build
+              mkdir -p dist
+              cp -v ./*.iso dist/neway-pnp-os-amd64.iso
+              cd dist
+              sha256sum neway-pnp-os-amd64.iso > neway-pnp-os-amd64.iso.sha256
+            '
+
+      - name: Upload ISO and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: neway-pnp-os-amd64
+          path: |
+            dist/neway-pnp-os-amd64.iso
+            dist/neway-pnp-os-amd64.iso.sha256
+          if-no-files-found: error
+          retention-days: 14

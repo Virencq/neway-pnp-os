@@ -5,6 +5,7 @@ cd "$repo_root"
 
 required=(
   config/package-lists/neway.list.chroot
+  config/includes.chroot/etc/xdg/openbox/menu.xml
   config/includes.chroot/etc/skel/.bash_profile
   config/includes.chroot/etc/skel/.xinitrc
   config/includes.chroot/etc/xdg/openbox/autostart
@@ -48,6 +49,9 @@ grep -Fq 'b5d682ad90cb7571ecbdbf26eef58d3c4514e726a74ef6d08ce3f0b114ef0bd9' scri
 grep -Fq 'neway-startx' scripts/build-iso.sh
 grep -Fq '88dea48de22621455b63c9e16e2ef5ca4ad62bb159f075ae924a79cbcebb40a8' scripts/build-iso.sh
 grep -Fq -- '--bootloaders "syslinux grub-efi"' scripts/build-iso.sh
+grep -Fq -- '--debian-installer live' scripts/build-iso.sh
+grep -Fq -- '--debian-installer-gui true' scripts/build-iso.sh
+grep -Fq 'debian-installer-launcher live' config/includes.chroot/etc/xdg/openbox/menu.xml
 grep -Fq 'username=nivo live-config.nocomponents=user-setup' scripts/build-iso.sh
 grep -Fq 'agetty --autologin nivo' config/hooks/live/9998-neway-operator.hook.chroot
 grep -Fq 'nivo:1234' config/hooks/live/9998-neway-operator.hook.chroot
@@ -56,7 +60,7 @@ if grep -q 'git clone.*openpnp' .github/workflows/build-iso.yml; then
   exit 1
 fi
 
-for package in openjdk-21-jre xinit openbox xterm spice-vdagent xserver-xorg-video-qxl xserver-xorg-video-vmware open-vm-tools open-vm-tools-desktop user-setup network-manager wireguard-tools openssh-server tpm2-tools gpgv nftables unzip curl; do
+for package in openjdk-21-jre xinit openbox xterm spice-vdagent xserver-xorg-video-qxl xserver-xorg-video-vmware open-vm-tools open-vm-tools-desktop user-setup network-manager network-manager-gnome wpasupplicant iw rfkill wireless-regdb firmware-linux firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 debian-installer-launcher wireguard-tools openssh-server tpm2-tools gpgv nftables unzip curl; do
   grep -Fxq "$package" config/package-lists/neway.list.chroot
 done
 if grep -Eq '^(maven|openjdk-21-jdk|git)$' config/package-lists/neway.list.chroot; then

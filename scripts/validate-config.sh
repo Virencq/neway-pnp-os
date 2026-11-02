@@ -60,6 +60,7 @@ grep -q -- '--add-opens=java.base/java.lang=ALL-UNNAMED' config/includes.chroot/
 grep -q -- '--add-opens=java.desktop/java.awt=ALL-UNNAMED' config/includes.chroot/usr/local/bin/neway-openpnp
 grep -Fq 'exec /bin/sh /usr/local/bin/neway-startx' config/includes.chroot/etc/skel/.bash_profile
 grep -Fq 'install -d -m 0750' config/includes.chroot/usr/local/bin/neway-startx
+grep -Fq '/home/nivo/.local/share/xorg' config/hooks/live/9998-neway-operator.hook.chroot
 grep -Fq '/usr/bin/startx -- -nolisten tcp vt1' config/includes.chroot/usr/local/bin/neway-startx
 grep -Fq -- "-cp \"\$JAR:\$LIB_DIR/*\"" config/includes.chroot/usr/local/bin/neway-openpnp
 grep -q 'org.openpnp.Main' config/includes.chroot/usr/local/bin/neway-openpnp

@@ -15,3 +15,14 @@ Set owner root:root and mode 0600. Validate with:
 Technician SSH is intentionally gated until the machine serial, TPM device, controller
 attestation verification marker, and WireGuard configuration all pass validation.
 Never commit real wg0.conf files, private keys, pre-shared keys, or customer VPN details.
+
+Automatic VPN startup
+---------------------
+
+After factory provisioning creates the unique wg0.conf, Neway enables wg-quick@wg0.service.
+At boot, a systemd pre-start guard checks the factory serial, TPM, verified controller
+marker, and root-owned mode-0600 WireGuard configuration before the tunnel is started.
+The peer endpoint should use PersistentKeepalive = 25 when the device is behind NAT and
+must accept inbound technician traffic only from the assigned VPN address range.
+
+Do not create or copy a shared wg0.conf. Generate one private key per physical machine.

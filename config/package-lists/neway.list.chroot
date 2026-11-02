@@ -25,6 +25,17 @@ user-setup
 sudo
 isc-dhcp-client
 network-manager
+network-manager-gnome
+wpasupplicant
+iw
+rfkill
+wireless-regdb
+firmware-linux
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+firmware-brcm80211
+debian-installer-launcher
 wireguard-tools
 openssh-server
 tpm2-tools

@@ -2,11 +2,7 @@
 
 ## Current implementation scope
 
-This branch adds Debian package/configuration scaffolding, fail-closed local checks, and a
-signed update-approval preflight. It does **not** enroll production identities, issue
-certificates, provision VPN keys, implement STM32 secure-element challenge-response, or
-install updates. Do not describe the feature as production-ready until those external
-services and hardware tests exist.
+This branch now includes a pinned RustDesk client, a factory-provisioned WireGuard auto-start path, and configuration helpers. It still does **not** issue per-machine VPN keys, enroll TPM identities, implement STM32 secure-element challenge-response, run the central Neway device registry, or automate RustDesk per-device credentials. Remote assistance is not production-ready until those services and hardware tests exist.
 
 ## Identity model
 
@@ -42,6 +38,30 @@ Phone vendors, Android versions, and kernels expose different USB network driver
 the actual interface driver on each supported phone; add a reviewed driver match if needed.
 Keep local Ethernet available for machine operation; do not bridge customer LAN traffic
 into the technician VPN. The USB connection is a transport, not an authentication method.
+
+## Automatic remote assistance
+
+The image includes the pinned official RustDesk 1.5.1 Debian client package. The package
+is SHA-256 verified during the ISO build. RustDesk's system service is gated until a
+Neway self-hosted ID server and its public key are provisioned. The Openbox session
+starts the RustDesk tray UI only after that configuration exists.
+
+Configure the client as root with:
+`neway-configure-rustdesk ID_SERVER PUBLIC_KEY`
+The command writes the ID server and public key into the root service profile and the
+operator profile. It does not set a permanent access password. RustDesk therefore retains
+its normal authentication/approval behavior until Neway's per-device access credential
+and technician identity workflow is deployed. Do not put a shared permanent password in
+the ISO or Git repository.
+
+Run `neway-enable-remote-access` after machine identity, controller attestation,
+WireGuard peer configuration, and RustDesk server settings have been provisioned. This
+enables the identity-gated WireGuard tunnel automatically at boot and starts the
+RustDesk service. SSH remains a separate, stricter opt-in gate.
+
+RustDesk OSS self-hosting requires the hbbs ID/rendezvous server and hbbr relay server.
+Use the official RustDesk deployment guide and expose only the required ports. Do not
+expose SSH or the machine's RustDesk direct-access port to the public Internet.
 
 ## Technician access
 

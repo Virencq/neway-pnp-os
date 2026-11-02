@@ -24,7 +24,6 @@ required=(
   config/includes.chroot/usr/local/bin/neway-rustdesk-ui
   config/includes.chroot/etc/systemd/system/wg-quick@wg0.service.d/10-neway-identity-gate.conf
   config/includes.chroot/etc/systemd/system/rustdesk.service.d/10-neway-provisioning.conf
-  config/includes.chroot/etc/xdg/autostart/neway-rustdesk.desktop
   config/includes.chroot/usr/local/sbin/neway-update-guard
   config/includes.chroot/etc/NetworkManager/conf.d/20-neway-usb-tethering.conf
   config/includes.chroot/etc/NetworkManager/system-connections/Neway-wired-and-USB-tethering.nmconnection

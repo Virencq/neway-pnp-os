@@ -32,3 +32,6 @@ gpgv
 nftables
 curl
 unzip
+open-vm-tools
+open-vm-tools-desktop
+xserver-xorg-video-vmware

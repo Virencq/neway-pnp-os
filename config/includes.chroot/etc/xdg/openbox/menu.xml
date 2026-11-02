@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openbox_menu xmlns="http://openbox.org/3.4/menu">
+  <menu id="root-menu" label="Neway PnP OS">
+    <item label="OpenPnP">
+      <action name="Execute"><command>/usr/local/bin/neway-openpnp</command></action>
+    </item>
+    <item label="Install Neway PnP OS to SSD">
+      <action name="Execute"><command>debian-installer-launcher live</command></action>
+    </item>
+    <separator/>
+    <item label="Wi-Fi and Network Settings">
+      <action name="Execute"><command>nm-connection-editor</command></action>
+    </item>
+    <item label="Terminal">
+      <action name="Execute"><command>xterm</command></action>
+    </item>
+    <separator/>
+    <item label="Restart graphical session">
+      <action name="Restart"/>
+    </item>
+    <item label="Exit session">
+      <action name="Exit"/>
+    </item>
+  </menu>
+</openbox_menu>

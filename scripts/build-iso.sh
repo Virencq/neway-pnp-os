@@ -8,6 +8,10 @@ cd "$repo_root"
 # Immutable, versioned Neway custom OpenPnP distribution published as a GitHub Release asset.
 asset_url="https://github.com/Virencq/neway-pnp-os/releases/download/openpnp.jar/openpnp-gui.zip"
 asset_sha256="88dea48de22621455b63c9e16e2ef5ca4ad62bb159f075ae924a79cbcebb40a8"
+# Official RustDesk client release pinned to the digest published by GitHub Releases.
+rustdesk_version="1.5.1"
+rustdesk_url="https://github.com/rustdesk/rustdesk/releases/download/1.5.1/rustdesk-1.5.1-x86_64.deb"
+rustdesk_sha256="b5d682ad90cb7571ecbdbf26eef58d3c4514e726a74ef6d08ce3f0b114ef0bd9"
 
 command -v curl >/dev/null || { echo "curl is required to fetch the OpenPnP release asset." >&2; exit 1; }
 command -v unzip >/dev/null || { echo "unzip is required to extract the OpenPnP release asset." >&2; exit 1; }
@@ -17,6 +21,7 @@ output_dir="$repo_root/build-output"
 download_dir="$repo_root/.build/downloads"
 artifact_zip="$download_dir/openpnp-gui.zip"
 staging_dir="$repo_root/.build/openpnp-extracted"
+rustdesk_deb="$download_dir/rustdesk-${rustdesk_version}-x86_64.deb"
 
 [[ ! -L "$build_dir" && ! -L "$download_dir" && ! -L "$staging_dir" ]] || {
   echo "Refusing to remove a symlink in the build staging paths." >&2
@@ -32,6 +37,16 @@ printf '%s  %s\n' "$asset_sha256" "$artifact_zip" | sha256sum --check --status |
   exit 1
 }
 unzip -tq "$artifact_zip" >/dev/null
+
+echo "Downloading pinned official RustDesk client..."
+curl --fail --location --retry 3 --retry-delay 2 --output "$rustdesk_deb" "$rustdesk_url"
+printf '%s  %s\\n' "$rustdesk_sha256" "$rustdesk_deb" | sha256sum --check --status || {
+  echo "RustDesk release SHA-256 mismatch; refusing to build." >&2
+  exit 1
+}
+dpkg-deb --info "$rustdesk_deb" >/dev/null
+install -d "$build_dir/config/packages.chroot"
+install -m 0644 "$rustdesk_deb" "$build_dir/config/packages.chroot/"
 unzip -q "$artifact_zip" -d "$staging_dir"
 
 # Accept either archive-root files or one containing directory, but require one JAR and lib/*.jar.

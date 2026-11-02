@@ -1,0 +1,4 @@
+# Debian Live desktop launcher for the Debian Installer.
+# The live-installer udeb is pulled in by the Debian Installer live build;
+# it is not installed as an ordinary .deb in the live filesystem.
+debian-installer-launcher

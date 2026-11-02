@@ -8,6 +8,8 @@ install -d -o root -g root -m 0755 \
     /etc/ssh/sshd_config.d \
     /etc/systemd/system/ssh.service.d \
     /etc/systemd/system/ssh.socket.d \
+    /etc/systemd/system/wg-quick@wg0.service.d \
+    /etc/systemd/system/rustdesk.service.d \
     /etc/NetworkManager/conf.d \
     /etc/NetworkManager/system-connections \
     /etc/wireguard \
@@ -22,12 +24,18 @@ chmod 0600 /etc/NetworkManager/system-connections/Neway-wired-and-USB-tethering.
 chmod 0644 /etc/ssh/sshd_config.d/60-neway-maintenance.conf
 chmod 0644 /etc/systemd/system/ssh.service.d/10-neway-gate.conf
 chmod 0644 /etc/systemd/system/ssh.socket.d/10-neway-gate.conf
+chmod 0644 /etc/systemd/system/wg-quick@wg0.service.d/10-neway-identity-gate.conf
+chmod 0644 /etc/systemd/system/rustdesk.service.d/10-neway-provisioning.conf
 chmod 0644 /etc/NetworkManager/conf.d/20-neway-usb-tethering.conf
 chmod 0644 /etc/nftables.conf /etc/nftables.d/neway-remote-access.nft
 chmod 0644 /etc/wireguard/README.neway
 chmod 0755 /usr/local/sbin/neway-machine-info
 chmod 0755 /usr/local/sbin/neway-remote-maintenance-guard
 chmod 0755 /usr/local/sbin/neway-enable-remote-maintenance
+chmod 0755 /usr/local/sbin/neway-wireguard-guard
+chmod 0755 /usr/local/sbin/neway-configure-rustdesk
+chmod 0755 /usr/local/sbin/neway-enable-remote-access
+chmod 0755 /usr/local/bin/neway-rustdesk-ui
 chmod 0755 /usr/local/sbin/neway-update-guard
 
 # Host SSH keys must be generated on each installed machine, never baked into a shared ISO.
@@ -37,4 +45,6 @@ rm -f /etc/ssh/ssh_host_*_key /etc/ssh/ssh_host_*_key.pub
 systemctl --root=/ disable ssh.service || true
 systemctl --root=/ disable ssh.socket || true
 systemctl --root=/ enable NetworkManager.service
+# Start the per-machine VPN automatically after factory provisioning supplies wg0.conf.
+systemctl --root=/ enable wg-quick@wg0.service
 systemctl --root=/ enable nftables.service
